@@ -34,6 +34,10 @@ dependencies:
   video_player: ^2.4.5
   # dlna 投屏库
   dlna_dart: ^0.0.5
+  # 网络请求库
+  dio: ^4.0.6
+  # 日期格式化库
+  intl: ^0.17.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

@@ -6,10 +6,12 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dlna_dart/dlna.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 import 'package:watch_together/main.dart';
 
@@ -31,6 +33,16 @@ void main() {
     expect(find.text('1'), findsOneWidget);
   });
 
+  test("localIp", () async {
+    var activeIpList = List.empty(growable: true);
+    var list = await NetworkInterface.list(type: InternetAddressType.IPv4);
+    for (var element in list) {
+      for (var address in element.addresses) {
+        activeIpList.add(address.address);
+      }
+    }
+    print(activeIpList);
+  });
 
   test("dlna test", () async {
     final searcher = search();
@@ -51,5 +63,13 @@ void main() {
       searcher.stop();
       print('server closed');
     });
+  });
+
+  test("dateFormat", () {
+    var date = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",'en_US').format(DateTime.now());
+    print(date);
+    var time = const Duration(seconds: 5000).toString();
+    var t = time.split(".")[0];
+    print(t);
   });
 }

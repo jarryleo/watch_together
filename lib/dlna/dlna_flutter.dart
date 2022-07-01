@@ -12,6 +12,9 @@ const String _UPNP_IP_V4 = '239.255.255.250';
 const int _UPNP_PORT = 1900;
 final InternetAddress _UPNP_AddressIPv4 = InternetAddress(_UPNP_IP_V4);
 
+/// 服务器常用xml
+XmlReplay? xmlReplay;
+
 /// 获取 随机 uuid
 var uuid = "27d6877e-${Random().nextInt(8999) + 1000}-ea12-abdf-cf8d50e36d54";
 
@@ -676,6 +679,32 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 </s:Envelope>''';
   }
 
+  /// 返回错误信息
+  // 401	Invalid Action	这个服务中没有这个动作
+  // 402	Invalid Args	参数数据错误
+  // 403	Out of Sycs	不同步
+  // 501	Action Failed	动作执行错误
+  // 600 ~ 699	TBD	一般动作错误，有UPnP论坛技术委员会定义
+  // 700 ~ 799	TBD	面向标准动作的特定错误，由 UPnP 论坛工作委员会定义
+  // 800 ~ 899	TBD	面向非标准动作的特定错误，由 UPnP 厂商定义
+  static String error(int errorCode,String errorDescription){
+    return '''<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+ <s:Body>
+ <u:Fault>
+ <faultcode>s:Client</faultcode>
+ <faultstring>UPnPError</faultstring>
+ <detail>
+ <UPnPError xmlns="urn:schemas-upnp-org:control-1-0">
+ <errorCode>$errorCode</errorCode>
+ <errorDescription>$errorDescription</errorDescription>
+ </UPnPError>
+ </detail>
+ </u:actionNameResponse>
+ </s:Body>
+</s:Envelope>''';
+  }
+
   /// dlna 服务描述文件
   static String scpd() {
     return '''<?xml version="1.0" encoding="utf-8"?>
@@ -1051,6 +1080,18 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   }
 }
 
+class Dlna{
+   static final Map<String,Device> devices = {};
+   static final Map<String,DeviceInfo> infos = {};
+
+  /// 获取所有信息
+  static get getInfos => infos;
+  /// 获取缓存设备
+   static Device? getDevice(String url){
+    return devices[url];
+  }
+}
+
 class DlnaServer {
 
   String? _name;
@@ -1058,7 +1099,7 @@ class DlnaServer {
     _name = name;
   }
   /// 启动dlna 服务
-  void start() async {
+  Future<Dlna> start() async {
     var ipList = await getActiveLocalIpList();
     var ip = ipList[0];
     var port = 8888;
@@ -1066,9 +1107,15 @@ class DlnaServer {
     if(name == null || name.isEmpty){
       name = "flutter dlna $ip:$port";
     }
-    var xml = XmlReplay(ip, port, name);
+    xmlReplay = XmlReplay(ip, port, name);
+
+    Handler(ip,port);
+
+    var dlna = Dlna();
     //启动dlna 服务
-    ServerListen().start(ip, port);
+    var serverListen = ServerListen();
+    serverListen.start(ip, port);
+    return dlna;
   }
 
 }
@@ -1116,9 +1163,13 @@ class ServerListen{
         return;
       }
       String message = String.fromCharCodes(d.data).trim();
+      InternetAddress clientAddress = d.address;
+      int clientPort = d.port;
       // print('Datagram from ${d.address.address}:${d.port}: ${message}');
       try {
-        // todo 分析接收到的数据
+        // 分析接收到的数据
+        var serverParser = ServerParser(message,clientAddress,clientPort,_socketServer!);
+        serverParser.get();
       } catch (e) {
         print(e);
       }
@@ -1140,6 +1191,7 @@ class ServerBroadcast{
   final RawDatagramSocket _socketServer;
   ServerBroadcast(this._socketServer,this._host,this._port);
 
+  /// 广播信息
   void broadcast() async {
     _search("ssdp:all");
     _notify("urn:schemas-upnp-org:service:RenderingControl:1");
@@ -1181,4 +1233,186 @@ class ServerBroadcast{
     _socketServer.send(text.codeUnits, _UPNP_AddressIPv4, _UPNP_PORT);
   }
 
+}
+
+
+/// 服务端解析
+class ServerParser{
+  final String _message; //客户端发来的数据
+  final InternetAddress _clientAddress; //客户端地址
+  final int _clientPort; //客户端端口
+  final RawDatagramSocket _socket; //socket
+  late List<String> _lines;
+
+  ServerParser(this._message,this._clientAddress,this._clientPort,this._socket){
+    final lines = _message.split('\n');
+    _lines = lines;
+  }
+
+  void get(){
+    final arr = _lines.first.split(' ');
+    if (arr.length < 3) {
+      return;
+    }
+    // 请求方法
+    final method = arr[0].toUpperCase();
+    if ( method == "HTTP/1.1" || method == "HTTP/1.0") {
+      // 如果是普通get请求，则回应
+
+    }else if (method == "M-SEARCH"){
+      mSearch();
+    } else if (method == "NOTIFY"){
+      notify();
+    }
+  }
+
+  /// 收到客户端的搜索请求 （可以原端口返回查询结果，也可以不管，让服务器自己广播）
+  void mSearch(){
+    var data = xmlReplay?.alive();
+    if(data == null) return;
+    _socket.send(data.codeUnits, _clientAddress,_clientPort);
+  }
+
+  /// 收到别人（别的可投屏设备）的存活广播
+  void notify() async{
+    String url = '';
+    for (var element in _lines) {
+      final arr = element.split(':');
+      final key = arr[0].trim().toUpperCase();
+      if (key == "LOCATION") {
+        url = arr[1].trim();
+      }
+    }
+    if (url != '') {
+      getInfo(url);
+    }
+  }
+
+  /// 请求地址获取设备信息
+  void getInfo(String url) async {
+    final target = Uri.parse(url);
+    final body = await Http.get(target);
+    final deviceInfo = XmlParser(body).parse(target);
+    final device = Device(deviceInfo);
+    Dlna.devices[url] = device;
+    Dlna.infos[url] = deviceInfo;
+  }
+}
+
+/// 服务端处理客户端的 http 请求
+class Handler{
+  late HttpServer _httpServer;
+  /// 开启http服务器
+  Handler(String ip,int port) {
+    HttpServer.bind(ip, port).then((value){
+      _httpServer = value;
+      listen();
+    });
+  }
+
+  /// 解析客户端http请求
+  void listen() async {
+    _httpServer.forEach((request) {
+      var method = request.method;
+      if (method == 'GET'){
+        doGet(request);
+      }else if (method == 'POST'){
+        doPost(request);
+      }
+    });
+  }
+
+  ///处理客户端get请求
+  void doGet(HttpRequest request){
+    var path = request.uri.path;
+    var response  = request.response;
+    print(path);
+
+    if (path.startsWith('/info')){
+      _info(response);
+    } else if (path.startsWith('/dlna/info.xml')){
+      _respDesc(response);
+    } else if (path.startsWith('/dlna/Render/AVTransport_scpd.xml')){
+      _scpd(response);
+    } else {
+      _error(response);
+    }
+    response.close();
+  }
+
+  ///处理客户端post请求
+  void doPost(HttpRequest request) async{
+    var path = request.uri.path;
+    var response  = request.response;
+    ContentType? contentType = request.headers.contentType;
+    print(path);
+    //if (contentType?.mimeType != 'application/json') return;
+
+    try {
+      String content = await utf8.decoder.bind(request).join();
+      print("post content = $content");
+      //todo 解析 post 的内容，获取参数
+      if (contentType?.mimeType == 'application/json') { // json 类型
+
+      }else if (contentType?.mimeType == 'text/xml'){ //dlna 客户端类型
+
+      }
+
+    } catch(e){
+      response.statusCode = HttpStatus.internalServerError;
+      response.write('Exception during file I/O: $e.');
+    }
+    if (path.startsWith('/play')){
+      _play(request);
+    } else if (path.startsWith('/pause')){
+
+    } else if (path.startsWith('/stop')){
+
+    } else if (path.startsWith('/position')){
+
+    } else if (path.startsWith('/seek')){
+
+    } else {
+      _error(response);
+    }
+    response.close();
+  }
+
+  ///返回客户端设备信息
+  void _info(HttpResponse response){
+    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Access-Control-Allow-Origin', '*');
+    var json = jsonEncode(Dlna.infos);
+    response.write(json);
+  }
+
+  ///返回客户端描述文件
+  void _respDesc(HttpResponse response){
+    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Access-Control-Allow-Origin', '*');
+    var data = xmlReplay?.desc() ?? "";
+    response.write(data);
+  }
+
+  /// 返回客户端服务描述文件
+  void _scpd(HttpResponse response){
+    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Access-Control-Allow-Origin', '*');
+    var data = XmlReplay.scpd();
+    response.write(data);
+  }
+
+  /// 返回404
+  void _error(HttpResponse response){
+    response.statusCode = HttpStatus.notFound; //404
+    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Access-Control-Allow-Origin', '*');
+    response.write('404 not found');
+  }
+
+  /// 客户端请求播放视频
+  void _play(HttpRequest request){
+    //从请求参数中获取url
+    
+  }
 }

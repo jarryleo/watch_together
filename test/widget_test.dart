@@ -72,4 +72,23 @@ void main() {
     var t = time.split(".")[0];
     print(t);
   });
+
+  test("http", () async {
+    var host = InternetAddress.loopbackIPv4.host;
+    var port = 8888;
+    var url = "http://127.0.0.1:$port";
+    var httpServer = await HttpServer.bind(host, port);
+    Timer.periodic(const Duration(seconds: 1), (timer) async {
+      print("post");
+      // HttpClient().post(url, port,"path");
+      var client = HttpClient();
+      var request = await client.get(url, port, "/path");
+      request.write("hello");
+      client.close();
+    });
+    await httpServer.forEach((request) {
+      var path = request.uri.path;
+      print(path);
+    });
+  });
 }

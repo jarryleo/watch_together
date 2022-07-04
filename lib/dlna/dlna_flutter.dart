@@ -13,13 +13,13 @@ const int _UPNP_PORT = 1900;
 final InternetAddress _UPNP_AddressIPv4 = InternetAddress(_UPNP_IP_V4);
 
 /// 服务器常用xml
-XmlReplay? xmlReplay;
+_XmlReplay? _xmlReplay;
 
 /// 获取 随机 uuid
-var uuid = "27d6877e-${Random().nextInt(8999) + 1000}-ea12-abdf-cf8d50e36d54";
+var _uuid = "27d6877e-${Random().nextInt(8999) + 1000}-ea12-abdf-cf8d50e36d54";
 
 /// 删除字符串[from]尾部所有指定字符[pattern]
-String removeTrailing(String pattern, String from) {
+String _removeTrailing(String pattern, String from) {
   int i = from.length;
   while (from.startsWith(pattern, i - pattern.length)) {
     i -= pattern.length;
@@ -28,7 +28,7 @@ String removeTrailing(String pattern, String from) {
 }
 
 /// 删除字符串[from]头部所有指定字符[pattern]
-String trimLeading(String pattern, String from) {
+String _trimLeading(String pattern, String from) {
   int i = 0;
   while (from.startsWith(pattern, i)) {
     i += pattern.length;
@@ -37,13 +37,13 @@ String trimLeading(String pattern, String from) {
 }
 
 /// 秒数转成时分秒
-String secondToTime(int second) {
+String _secondToTime(int second) {
   var time = const Duration(seconds: 5000).toString();
   return time.split(".")[0];
 }
 
 /// html 编码
-String htmlEncode(String text) {
+String _htmlEncode(String text) {
   Map<String, String> mapping = Map.from(
       {"&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': '&quot;'});
   mapping.forEach((key, value) {
@@ -53,7 +53,7 @@ String htmlEncode(String text) {
 }
 
 /// 异步获取本机活动的ip地址
-Future<List<String>> getActiveLocalIpList() async {
+Future<List<String>> _getActiveLocalIpList() async {
   List<String> activeIpList = List.empty(growable: true);
   var list = await NetworkInterface.list(type: InternetAddressType.IPv4);
   for (var element in list) {
@@ -65,7 +65,7 @@ Future<List<String>> getActiveLocalIpList() async {
 }
 
 /// 网络请求
-class Http {
+class _Http {
   static final client = HttpClient();
 
   static Future<String> get(Uri uri) async {
@@ -99,7 +99,7 @@ class Http {
 }
 
 /// xml 文本类
-class XmlText {
+class _XmlText {
   static String setPlayURLXml(String url) {
     var title = url;
     final douyu = RegExp(r'^https?://(\d+)\?douyu$');
@@ -111,8 +111,8 @@ class XmlText {
     }
     var meta =
         '''<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:sec="http://www.sec.co.kr/"><item id="false" parentID="1" restricted="0"><dc:title>$title</dc:title><dc:creator>unkown</dc:creator><upnp:class>object.item.videoItem</upnp:class><res resolution="4"></res></item></DIDL-Lite>''';
-    meta = htmlEncode(meta);
-    url = htmlEncode(url);
+    meta = _htmlEncode(meta);
+    url = _htmlEncode(url);
     return '''<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <s:Body>
@@ -198,13 +198,13 @@ class DeviceInfo {
 }
 
 /// 进度解析
-class PositionParser {
+class _PositionParser {
   String trackDuration = "00:00:00";
   String trackURI = "";
   String relTime = "00:00:00";
   String absTime = "00:00:00";
 
-  PositionParser(String text) {
+  _PositionParser(String text) {
     var doc = XmlDocument.parse(text);
     trackDuration = doc.findAllElements('TrackDuration').first.text;
     trackURI = doc.findAllElements('TrackURI').first.text;
@@ -249,11 +249,11 @@ class PositionParser {
 }
 
 /// xml 解析
-class XmlParser {
+class _XmlParser {
   final String text;
   final XmlDocument doc;
 
-  XmlParser(this.text) : doc = XmlDocument.parse(text);
+  _XmlParser(this.text) : doc = XmlDocument.parse(text);
 
   DeviceInfo parse(Uri uri) {
     String baseUrl = "";
@@ -288,11 +288,11 @@ class Device {
   Device(this.info);
 
   String get controlURL {
-    final base = removeTrailing("/", info.baseUrl);
+    final base = _removeTrailing("/", info.baseUrl);
     final s = info.serviceList
         .firstWhere((element) => element['serviceId'].contains("AVTransport"));
     if (s != null) {
-      final controlURL = trimLeading("/", s["controlURL"]);
+      final controlURL = _trimLeading("/", s["controlURL"]);
       return '$base/$controlURL';
     }
     throw Exception("not found controlURL");
@@ -304,51 +304,51 @@ class Device {
       'SOAPAction': '"urn:schemas-upnp-org:service:AVTransport:1#$action"',
       'Content-Type': 'text/xml',
     });
-    return Http.post(Uri.parse(controlURL), headers, data);
+    return _Http.post(Uri.parse(controlURL), headers, data);
   }
 
   Future<String> setUrl(String url) {
-    final data = XmlText.setPlayURLXml(url);
+    final data = _XmlText.setPlayURLXml(url);
     return request('SetAVTransportURI', Utf8Encoder().convert(data));
   }
 
   Future<String> play() {
-    final data = XmlText.playActionXml();
+    final data = _XmlText.playActionXml();
     return request('Play', Utf8Encoder().convert(data));
   }
 
   Future<String> pause() {
-    final data = XmlText.pauseActionXml();
+    final data = _XmlText.pauseActionXml();
     return request('Pause', Utf8Encoder().convert(data));
   }
 
   Future<String> stop() {
-    final data = XmlText.stopActionXml();
+    final data = _XmlText.stopActionXml();
     return request('Stop', Utf8Encoder().convert(data));
   }
 
   Future<String> seek(String sk) {
-    final data = XmlText.seekToXml(sk);
+    final data = _XmlText.seekToXml(sk);
     return request('Seek', Utf8Encoder().convert(data));
   }
 
   Future<String> position() {
-    final data = XmlText.getPositionXml();
+    final data = _XmlText.getPositionXml();
     return request('GetPositionInfo', Utf8Encoder().convert(data));
   }
 
   Future<String> seekByCurrent(String text, int n) {
-    final p = PositionParser(text);
+    final p = _PositionParser(text);
     final sk = p.seek(n);
     return seek(sk);
   }
 }
 
 /// dlna 解析
-class Parser {
+class _Parser {
   final String message;
 
-  Parser(this.message);
+  _Parser(this.message);
 
   parse() async {
     final lines = message.split('\n');
@@ -387,8 +387,8 @@ class Parser {
 
   Future<DeviceInfo> getInfo(String uri) async {
     final target = Uri.parse(uri);
-    final body = await Http.get(target);
-    final info = XmlParser(body).parse(target);
+    final body = await _Http.get(target);
+    final info = _XmlParser(body).parse(target);
     return info;
   }
 }
@@ -400,7 +400,7 @@ class Manager {
   Manager();
 
   onMessage(String message) async {
-    final DeviceInfo? info = await Parser(message).parse();
+    final DeviceInfo? info = await _Parser(message).parse();
     if (info != null) {
       deviceList[info.baseUrl] = Device(info);
     }
@@ -503,7 +503,7 @@ class Search {
 }
 
 /// dlna 服务端播放状态，被投屏端
-class PlayStatus {
+class _PlayStatus {
   static var playing = null;
   static bool stopped = true;
   static String url = "";
@@ -512,12 +512,12 @@ class PlayStatus {
 }
 
 /// dlna 服务端常用 xml 指令 (对dlna 客服端的回复)
-class XmlReplay {
+class _XmlReplay {
   String ip;
   int port;
   String name;
 
-  XmlReplay(this.ip, this.port, this.name);
+  _XmlReplay(this.ip, this.port, this.name);
 
   /// 客户端连接申请回复
   String alive() {
@@ -533,7 +533,7 @@ class XmlReplay {
       'LOCATION: http://$ip:$port/dlna/info.xml',
       'SERVER: simple flutter dlna server',
       'ST: $st',
-      'USN: uuid:$uuid',
+      'USN: uuid:$_uuid',
       '',
       '',
     ];
@@ -550,11 +550,11 @@ class XmlReplay {
         <friendlyName>$name</friendlyName>
         <manufacturer>flutter dlna server</manufacturer>
         <manufacturerURL>https://github.com/suconghou/dlna-dart</manufacturerURL>
-        <modelDescription>flutter dlna</modelDescription>
+        <modelDescription>flutter dlna fork from dlna-dart</modelDescription>
         <modelName>flutter dlna</modelName>
         <modelURL>https://github.com/suconghou/dlna-dart</modelURL>
         <UPC>000000000013</UPC>
-        <UDN>uuid:$uuid</UDN>
+        <UDN>uuid:$_uuid</UDN>
         <serviceList>
             <service>
                 <serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType>
@@ -572,10 +572,10 @@ class XmlReplay {
   /// 客户端获取播放状态回复
   static String trans() {
     String playState;
-    if (PlayStatus.url.isEmpty) {
+    if (_PlayStatus.url.isEmpty) {
       playState = "NO_MEDIA_PRESENT";
     } else {
-      playState = PlayStatus.stopped ? "STOPPED" : "PLAYING";
+      playState = _PlayStatus.stopped ? "STOPPED" : "PLAYING";
     }
     return '''<?xml version="1.0" encoding="UTF-8"?>
         <s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
@@ -618,8 +618,8 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 <s:Body><u:GetMediaInfoResponse xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
  <NrTracks>0</NrTracks>
  <MediaDuration>02:00:00</MediaDuration>
- <CurrentURI>${htmlEncode(PlayStatus.url)}</CurrentURI>
- <CurrentURIMetaData>${htmlEncode(PlayStatus.meta)}</CurrentURIMetaData>
+ <CurrentURI>${_htmlEncode(_PlayStatus.url)}</CurrentURI>
+ <CurrentURIMetaData>${_htmlEncode(_PlayStatus.meta)}</CurrentURIMetaData>
  <NextURI></NextURI>
  <NextURIMetaData></NextURIMetaData>
  <PlayMedium>NETWORK</PlayMedium>
@@ -638,10 +638,10 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 		<u:GetPositionInfoResponse xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
 			<Track>0</Track>
 			<TrackDuration>02:00:00</TrackDuration>
-			<TrackMetaData>${htmlEncode(PlayStatus.meta)}</TrackMetaData>
-			<TrackURI>${htmlEncode(PlayStatus.url)}</TrackURI>
-			<RelTime>${secondToTime(PlayStatus.time)}</RelTime>
-			<AbsTime>${secondToTime(PlayStatus.time)}</AbsTime>
+			<TrackMetaData>${_htmlEncode(_PlayStatus.meta)}</TrackMetaData>
+			<TrackURI>${_htmlEncode(_PlayStatus.url)}</TrackURI>
+			<RelTime>${_secondToTime(_PlayStatus.time)}</RelTime>
+			<AbsTime>${_secondToTime(_PlayStatus.time)}</AbsTime>
 			<RelCount>2147483647</RelCount>
 			<AbsCount>2147483647</AbsCount>
 		</u:GetPositionInfoResponse>
@@ -1080,7 +1080,7 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   }
 }
 
-class Dlna{
+class _Dlna{
    static final Map<String,Device> devices = {};
    static final Map<String,DeviceInfo> infos = {};
 
@@ -1099,21 +1099,21 @@ class DlnaServer {
     _name = name;
   }
   /// 启动dlna 服务
-  Future<Dlna> start() async {
-    var ipList = await getActiveLocalIpList();
+  Future<_Dlna> start() async {
+    var ipList = await _getActiveLocalIpList();
     var ip = ipList[0];
     var port = 8888;
     var name = _name;
     if(name == null || name.isEmpty){
       name = "flutter dlna $ip:$port";
     }
-    xmlReplay = XmlReplay(ip, port, name);
+    _xmlReplay = _XmlReplay(ip, port, name);
 
-    Handler(ip,port);
+    _Handler(ip,port);
 
-    var dlna = Dlna();
+    var dlna = _Dlna();
     //启动dlna 服务
-    var serverListen = ServerListen();
+    var serverListen = _ServerListen();
     serverListen.start(ip, port);
     return dlna;
   }
@@ -1121,7 +1121,7 @@ class DlnaServer {
 }
 
 /// dlna 监听客户端信息
-class ServerListen{
+class _ServerListen{
   Timer? _sender;
   Timer? _receiver;
   RawDatagramSocket? _socketServer;
@@ -1151,7 +1151,7 @@ class ServerListen{
       _socketServer!.joinMulticast(_UPNP_AddressIPv4);
     }
     //广播自身信息
-    var serverBroadcast =  ServerBroadcast(_socketServer!,host,port);
+    var serverBroadcast =  _ServerBroadcast(_socketServer!,host,port);
     _sender = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
         serverBroadcast.broadcast();
     });
@@ -1168,7 +1168,7 @@ class ServerListen{
       // print('Datagram from ${d.address.address}:${d.port}: ${message}');
       try {
         // 分析接收到的数据
-        var serverParser = ServerParser(message,clientAddress,clientPort,_socketServer!);
+        var serverParser = _ServerParser(message,clientAddress,clientPort,_socketServer!);
         serverParser.get();
       } catch (e) {
         print(e);
@@ -1185,11 +1185,11 @@ class ServerListen{
 }
 
 /// dlna 服务端广播信息
-class ServerBroadcast{
+class _ServerBroadcast{
   final String _host; // 本机ip
   final int _port; //本机端口
   final RawDatagramSocket _socketServer;
-  ServerBroadcast(this._socketServer,this._host,this._port);
+  _ServerBroadcast(this._socketServer,this._host,this._port);
 
   /// 广播信息
   void broadcast() async {
@@ -1226,7 +1226,7 @@ class ServerBroadcast{
       'NT: $nt',
       'NTS: ssdp:alive',
       'SERVER: Python Dlna Server',
-      'USN: uuid:$uuid::$nt',
+      'USN: uuid:$_uuid::$nt',
       '',
       '',
     ].join('\r\n');
@@ -1237,14 +1237,14 @@ class ServerBroadcast{
 
 
 /// 服务端解析
-class ServerParser{
+class _ServerParser{
   final String _message; //客户端发来的数据
   final InternetAddress _clientAddress; //客户端地址
   final int _clientPort; //客户端端口
   final RawDatagramSocket _socket; //socket
   late List<String> _lines;
 
-  ServerParser(this._message,this._clientAddress,this._clientPort,this._socket){
+  _ServerParser(this._message,this._clientAddress,this._clientPort,this._socket){
     final lines = _message.split('\n');
     _lines = lines;
   }
@@ -1258,7 +1258,7 @@ class ServerParser{
     final method = arr[0].toUpperCase();
     if ( method == "HTTP/1.1" || method == "HTTP/1.0") {
       // 如果是普通get请求，则回应
-
+      mSearch();
     }else if (method == "M-SEARCH"){
       mSearch();
     } else if (method == "NOTIFY"){
@@ -1268,7 +1268,7 @@ class ServerParser{
 
   /// 收到客户端的搜索请求 （可以原端口返回查询结果，也可以不管，让服务器自己广播）
   void mSearch(){
-    var data = xmlReplay?.alive();
+    var data = _xmlReplay?.alive();
     if(data == null) return;
     _socket.send(data.codeUnits, _clientAddress,_clientPort);
   }
@@ -1291,19 +1291,59 @@ class ServerParser{
   /// 请求地址获取设备信息
   void getInfo(String url) async {
     final target = Uri.parse(url);
-    final body = await Http.get(target);
-    final deviceInfo = XmlParser(body).parse(target);
+    final body = await _Http.get(target);
+    final deviceInfo = _XmlParser(body).parse(target);
     final device = Device(deviceInfo);
-    Dlna.devices[url] = device;
-    Dlna.infos[url] = deviceInfo;
+    _Dlna.devices[url] = device;
+    _Dlna.infos[url] = deviceInfo;
+  }
+}
+
+///服务端解析客户端发送来的xml
+class _ServerXmlParser{
+  final String text;
+  final XmlDocument doc;
+
+  final _actionList = {'SetAVTransportURI','Play','Pause','Stop','Seek','GetPositionInfo'};
+
+  _ServerXmlParser(this.text) : doc = XmlDocument.parse(text);
+
+  ///获取客户端的指令
+  String getAction(){
+    for (var element in _actionList) {
+      if(_hasAction(element)){
+        return element.toLowerCase();
+      }
+    }
+    return "";
+  }
+
+  ///获取xml 标签内的值
+  String getElementText(String element){
+    var text = "";
+    try {
+      text = doc.findAllElements(element).first.text;
+    }catch (e){
+      print(e);
+    }
+    return text;
+  }
+
+  ///判断 action是否存在
+  bool _hasAction(String action){
+    String a = action;
+    if(!action.startsWith('u:')){
+      a ="u:$a";
+    }
+    return doc.findAllElements(a).isNotEmpty;
   }
 }
 
 /// 服务端处理客户端的 http 请求
-class Handler{
+class _Handler{
   late HttpServer _httpServer;
   /// 开启http服务器
-  Handler(String ip,int port) {
+  _Handler(String ip,int port) {
     HttpServer.bind(ip, port).then((value){
       _httpServer = value;
       listen();
@@ -1347,34 +1387,69 @@ class Handler{
     ContentType? contentType = request.headers.contentType;
     print(path);
     //if (contentType?.mimeType != 'application/json') return;
-
+    String body;
+    _ServerXmlParser? xmlParser;
+    String action = "";
     try {
-      String content = await utf8.decoder.bind(request).join();
-      print("post content = $content");
-      //todo 解析 post 的内容，获取参数
+      body = await utf8.decoder.bind(request).join();
+      print("post content = $body");
+      // 解析 post 的内容，获取参数
       if (contentType?.mimeType == 'application/json') { // json 类型
-
+        // dlna 类型基本为xml，json 暂不处理
+        return;
       }else if (contentType?.mimeType == 'text/xml'){ //dlna 客户端类型
-
+        // 解析 xml
+        xmlParser = _ServerXmlParser(body);
+        action = xmlParser.getAction();
       }
-
     } catch(e){
       response.statusCode = HttpStatus.internalServerError;
       response.write('Exception during file I/O: $e.');
+      response.close();
+      return;
     }
-    if (path.startsWith('/play')){
-      _play(request);
-    } else if (path.startsWith('/pause')){
-
-    } else if (path.startsWith('/stop')){
-
-    } else if (path.startsWith('/position')){
-
-    } else if (path.startsWith('/seek')){
-
-    } else {
-      _error(response);
+    if(xmlParser == null) {
+      response.close();
+      return;
     }
+    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Access-Control-Allow-Origin', '*');
+    String data = "";
+    switch (action){
+      case "SetAVTransportURI":
+        //获取客户端传来的 uri
+        var uri = xmlParser.getElementText('CurrentURI');
+        _setUri(uri);
+        data = _XmlReplay.setUriResp();
+        break;
+      case "Play":
+        _play();
+        data = _XmlReplay.playResp();
+        break;
+      case "Pause":
+        _pause();
+        data = _XmlReplay.pause();
+        break;
+      case "Stop":
+        _stop();
+        data = _XmlReplay.stop();
+        break;
+      case "GetPositionInfo":
+        _getPosition();
+        data = _XmlReplay.positionInfo();
+        break;
+      case "Seek":
+        //获取进度信息
+        var sk = xmlParser.getElementText('Target');
+        _seek(sk);
+        data = _XmlReplay.seekResp();
+        break;
+      default:
+        _error(response);
+        response.close();
+        return;
+    }
+    response.write(data);
     response.close();
   }
 
@@ -1382,7 +1457,7 @@ class Handler{
   void _info(HttpResponse response){
     response.headers.add('Content-type', 'application/json');
     response.headers.add('Access-Control-Allow-Origin', '*');
-    var json = jsonEncode(Dlna.infos);
+    var json = jsonEncode(_Dlna.infos);
     response.write(json);
   }
 
@@ -1390,7 +1465,7 @@ class Handler{
   void _respDesc(HttpResponse response){
     response.headers.add('Content-type', 'application/json');
     response.headers.add('Access-Control-Allow-Origin', '*');
-    var data = xmlReplay?.desc() ?? "";
+    var data = _xmlReplay?.desc() ?? "";
     response.write(data);
   }
 
@@ -1398,7 +1473,7 @@ class Handler{
   void _scpd(HttpResponse response){
     response.headers.add('Content-type', 'application/json');
     response.headers.add('Access-Control-Allow-Origin', '*');
-    var data = XmlReplay.scpd();
+    var data = _XmlReplay.scpd();
     response.write(data);
   }
 
@@ -1410,9 +1485,30 @@ class Handler{
     response.write('404 not found');
   }
 
+  /// 设置播放地址
+  void _setUri(String uri){
+    print(uri);
+  }
   /// 客户端请求播放视频
-  void _play(HttpRequest request){
-    //从请求参数中获取url
+  void _play(){
     
+  }
+  /// 客户端请求暂停视频
+  void _pause(){
+
+  }
+  /// 客户端请求停止视频
+  void _stop(){
+
+  }
+  /// 客户端请求跳转进度位置
+  /// [sk] : 00:00:12
+  void _seek(String sk){
+    //进度转秒数
+    int seek = _PositionParser.toInt(sk);
+  }
+  /// 客户端请求获取服务端进度位置
+  void _getPosition(){
+
   }
 }

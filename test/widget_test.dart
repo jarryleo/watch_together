@@ -12,6 +12,7 @@ import 'package:dlna_dart/dlna.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:watch_together/dlna/dlna_flutter.dart';
 
 import 'package:watch_together/main.dart';
 
@@ -90,5 +91,10 @@ void main() {
       var path = request.uri.path;
       print(path);
     });
+  });
+
+  test("enum", (){
+    final actionList = DlnaEvent.values.map((e) => e.value);
+    print(actionList);
   });
 }

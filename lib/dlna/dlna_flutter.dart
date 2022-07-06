@@ -504,8 +504,8 @@ class Search {
 
 /// dlna 服务端播放状态，被投屏端
 class _PlayStatus {
-  static var playing = null;
-  static bool stopped = true;
+  static var playing = false;  // true 播放中，false 暂停或停止
+  static bool stopped = true; // true 停止，false 播放或暂停
   static String url = "";
   static String meta = "";
   static int time = 0; //播放进度，单位秒
@@ -1092,14 +1092,25 @@ class _Dlna{
   }
 }
 
-class DlnaServer {
+/// dlna 事件
+enum DlnaEvent {
+  setUri, play, pause, stop, seek, getPositionInfo
+}
+///dlna 事件枚举拓展
+extension DlnaEventExt on DlnaEvent {
+  String get value => ['SetAVTransportURI','Play','Pause','Stop','Seek','GetPositionInfo'][index];
+}
 
+class DlnaServer {
   String? _name;
+
+  _ServerListen? _serverListen;
+
   DlnaServer({String name = ""}){
     _name = name;
   }
   /// 启动dlna 服务
-  Future<_Dlna> start() async {
+  void start(DlnaAction action) async {
     var ipList = await _getActiveLocalIpList();
     var ip = ipList[0];
     var port = 8888;
@@ -1109,15 +1120,17 @@ class DlnaServer {
     }
     _xmlReplay = _XmlReplay(ip, port, name);
 
-    _Handler(ip,port);
+    _Handler(ip,port,action);
 
-    var dlna = _Dlna();
     //启动dlna 服务
-    var serverListen = _ServerListen();
-    serverListen.start(ip, port);
-    return dlna;
+    _serverListen = _ServerListen();
+    _serverListen?.start(ip, port);
   }
 
+  ///停止接收投屏
+  void stop() {
+    _serverListen?.stop();
+  }
 }
 
 /// dlna 监听客户端信息
@@ -1304,18 +1317,16 @@ class _ServerXmlParser{
   final String text;
   final XmlDocument doc;
 
-  final _actionList = {'SetAVTransportURI','Play','Pause','Stop','Seek','GetPositionInfo'};
-
   _ServerXmlParser(this.text) : doc = XmlDocument.parse(text);
 
   ///获取客户端的指令
-  String getAction(){
-    for (var element in _actionList) {
-      if(_hasAction(element)){
-        return element.toLowerCase();
+  DlnaEvent? getAction(){
+    for (var element in DlnaEvent.values) {
+      if(_hasAction(element.value)){
+        return element;
       }
     }
-    return "";
+    return null;
   }
 
   ///获取xml 标签内的值
@@ -1342,8 +1353,10 @@ class _ServerXmlParser{
 /// 服务端处理客户端的 http 请求
 class _Handler{
   late HttpServer _httpServer;
+  late DlnaAction _action;
   /// 开启http服务器
-  _Handler(String ip,int port) {
+  _Handler(String ip,int port,DlnaAction action) {
+    _action = action;
     HttpServer.bind(ip, port).then((value){
       _httpServer = value;
       listen();
@@ -1389,7 +1402,7 @@ class _Handler{
     //if (contentType?.mimeType != 'application/json') return;
     String body;
     _ServerXmlParser? xmlParser;
-    String action = "";
+    DlnaEvent? action;
     try {
       body = await utf8.decoder.bind(request).join();
       print("post content = $body");
@@ -1416,29 +1429,29 @@ class _Handler{
     response.headers.add('Access-Control-Allow-Origin', '*');
     String data = "";
     switch (action){
-      case "SetAVTransportURI":
+      case DlnaEvent.setUri:
         //获取客户端传来的 uri
         var uri = xmlParser.getElementText('CurrentURI');
         _setUri(uri);
         data = _XmlReplay.setUriResp();
         break;
-      case "Play":
+      case DlnaEvent.play:
         _play();
         data = _XmlReplay.playResp();
         break;
-      case "Pause":
+      case DlnaEvent.pause:
         _pause();
         data = _XmlReplay.pause();
         break;
-      case "Stop":
+      case DlnaEvent.stop:
         _stop();
         data = _XmlReplay.stop();
         break;
-      case "GetPositionInfo":
+      case DlnaEvent.getPositionInfo:
         _getPosition();
         data = _XmlReplay.positionInfo();
         break;
-      case "Seek":
+      case DlnaEvent.seek:
         //获取进度信息
         var sk = xmlParser.getElementText('Target');
         _seek(sk);
@@ -1487,28 +1500,47 @@ class _Handler{
 
   /// 设置播放地址
   void _setUri(String uri){
+    _action.setUrl(uri);
     print(uri);
   }
   /// 客户端请求播放视频
   void _play(){
-    
+    _action.play();
+    _PlayStatus.playing = true;
+    _PlayStatus.stopped = false;
   }
   /// 客户端请求暂停视频
   void _pause(){
-
+    _action.pause();
+    _PlayStatus.playing = false;
   }
   /// 客户端请求停止视频
   void _stop(){
-
+    _action.stop();
+    _PlayStatus.playing = false;
+    _PlayStatus.stopped = true;
   }
   /// 客户端请求跳转进度位置
   /// [sk] : 00:00:12
   void _seek(String sk){
     //进度转秒数
     int seek = _PositionParser.toInt(sk);
+    _action.seek(seek);
+    _PlayStatus.time = seek;
   }
   /// 客户端请求获取服务端进度位置
   void _getPosition(){
-
+    var position = _action.getPosition();
+    _PlayStatus.time = position;
   }
+}
+
+/// 客户端和服务端交互事件
+abstract class DlnaAction {
+  void setUrl(String url);
+  void play();
+  void pause();
+  void stop();
+  void seek(int position);
+  int getPosition(){return _PlayStatus.time;}
 }

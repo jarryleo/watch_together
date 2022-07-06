@@ -35,22 +35,19 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> implements DlnaAction {
   DlnaServer dlnaServer = DlnaServer();
 
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
     dlnaServer.start(this);
-    _controller = VideoPlayerController.network("")
-      ..initialize().then((value) {
-        setState(() {});
-      });
+
   }
 
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
+    _controller?.dispose();
     dlnaServer.stop();
   }
 
@@ -61,43 +58,41 @@ class _MyHomePageState extends State<MyHomePage> implements DlnaAction {
         title: Text(widget.title),
       ),
       body: Center(
-          child: _controller.value.isInitialized
+          child: _controller?.value.isInitialized == true
               ? AspectRatio(
-                  aspectRatio: _controller.value.aspectRatio,
-                  child: VideoPlayer(_controller))
-              : Container(
-                  child: const Text("没有可播放的视频"),
-                )),
+                  aspectRatio: _controller!.value.aspectRatio,
+                  child: VideoPlayer(_controller!))
+              : const Text("没有可播放的视频")),
     );
   }
 
   @override
   int getPosition() {
-    return _controller.value.position.inSeconds;
+    return _controller?.value.position.inSeconds ?? 0;
   }
 
   @override
   int getDuration() {
-    return _controller.value.duration.inSeconds;
+    return _controller?.value.duration.inSeconds  ?? 0;
   }
 
   @override
   int getVolume() {
-    return _controller.value.volume.toInt();
+    return _controller?.value.volume.toInt()  ?? 0;
   }
   @override
   void pause() {
-    _controller.pause();
+    _controller?.pause();
   }
 
   @override
   void play() {
-    _controller.play();
+    _controller?.play();
   }
 
   @override
   void seek(int position) {
-    _controller.seekTo(Duration(seconds: position));
+    _controller?.seekTo(Duration(seconds: position));
   }
 
   @override
@@ -110,8 +105,8 @@ class _MyHomePageState extends State<MyHomePage> implements DlnaAction {
 
   @override
   void stop() {
-    _controller.pause();
-    _controller.seekTo(const Duration(seconds: 0));
+    _controller?.pause();
+    _controller?.seekTo(const Duration(seconds: 0));
   }
 
 }

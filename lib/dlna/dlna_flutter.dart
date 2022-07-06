@@ -13,9 +13,6 @@ const String _UPNP_IP_V4 = '239.255.255.250';
 const int _UPNP_PORT = 1900;
 final InternetAddress _UPNP_AddressIPv4 = InternetAddress(_UPNP_IP_V4);
 
-/// 服务器常用xml
-_XmlReplay? _xmlReplay;
-
 /// 获取 随机 uuid
 var _uuid = "27d6877e-${Random().nextInt(8999) + 1000}-ea12-abdf-cf8d50e36d54";
 
@@ -310,32 +307,32 @@ class Device {
 
   Future<String> setUrl(String url) {
     final data = _XmlText.setPlayURLXml(url);
-    return request('SetAVTransportURI', Utf8Encoder().convert(data));
+    return request('SetAVTransportURI', const Utf8Encoder().convert(data));
   }
 
   Future<String> play() {
     final data = _XmlText.playActionXml();
-    return request('Play', Utf8Encoder().convert(data));
+    return request('Play', const Utf8Encoder().convert(data));
   }
 
   Future<String> pause() {
     final data = _XmlText.pauseActionXml();
-    return request('Pause', Utf8Encoder().convert(data));
+    return request('Pause', const Utf8Encoder().convert(data));
   }
 
   Future<String> stop() {
     final data = _XmlText.stopActionXml();
-    return request('Stop', Utf8Encoder().convert(data));
+    return request('Stop', const Utf8Encoder().convert(data));
   }
 
   Future<String> seek(String sk) {
     final data = _XmlText.seekToXml(sk);
-    return request('Seek', Utf8Encoder().convert(data));
+    return request('Seek', const Utf8Encoder().convert(data));
   }
 
   Future<String> position() {
     final data = _XmlText.getPositionXml();
-    return request('GetPositionInfo', Utf8Encoder().convert(data));
+    return request('GetPositionInfo', const Utf8Encoder().convert(data));
   }
 
   Future<String> seekByCurrent(String text, int n) {
@@ -374,15 +371,15 @@ class _Parser {
 
   onNotify(List<String> lines) async {
     String uri = '';
-    lines.forEach((element) {
-      final arr = element.split(':');
+    for (var line in lines) {
+      final arr = line.split(':');
       final key = arr[0].trim().toUpperCase();
       if (key == "LOCATION") {
         arr.removeAt(0);
         final value = arr.join(':');
         uri = value.trim();
       }
-    });
+    }
     if (uri != '') {
       return await getInfo(uri);
     }
@@ -415,6 +412,7 @@ class Search {
   Timer? sender;
   Timer? receiver;
   RawDatagramSocket? socketServer;
+
   // 开始扫描局域网可投屏设备
   Future<Manager> start({reusePort = false}) async {
     stop();
@@ -424,7 +422,7 @@ class Search {
         reusePort: reusePort);
     // https://github.com/dart-lang/sdk/issues/42250 截止到 dart 2.13.4 仍存在问题,期待新版修复
     // 修复IOS joinMulticast 的问题
-    if (Platform.isIOS) {
+    if (Platform.isIOS || Platform.isMacOS) {
       final List<NetworkInterface> interfaces = await NetworkInterface.list(
         includeLinkLocal: false,
         type: InternetAddress.anyIPv4.type,
@@ -468,7 +466,6 @@ class Search {
       }
     });
 
-
     receiver = Timer.periodic(const Duration(seconds: 2), (Timer t) async {
       final d = socketServer!.receive();
       if (d == null) {
@@ -488,7 +485,7 @@ class Search {
   }
 
   /// udp 发送不同协议的搜索信息
-  void _search(RawDatagramSocket socket,String st){
+  void _search(RawDatagramSocket socket, String st) {
     var text = [
       'M-SEARCH * HTTP/1.1',
       'HOST: 239.255.255.250:1900',
@@ -511,7 +508,7 @@ class Search {
 
 /// dlna 服务端播放状态，被投屏端
 class _PlayStatus {
-  static var playing = false;  // true 播放中，false 暂停或停止
+  static var playing = false; // true 播放中，false 暂停或停止
   static bool stopped = true; // true 停止，false 播放或暂停
   static String url = "";
   static String meta = "";
@@ -626,7 +623,7 @@ class _XmlReplay {
 s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 <s:Body><u:GetMediaInfoResponse xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
  <NrTracks>0</NrTracks>
- <MediaDuration>02:00:00</MediaDuration>
+ <MediaDuration>${_secondToTime(_PlayStatus.duration)}</MediaDuration>
  <CurrentURI>${_htmlEncode(_PlayStatus.url)}</CurrentURI>
  <CurrentURIMetaData>${_htmlEncode(_PlayStatus.meta)}</CurrentURIMetaData>
  <NextURI></NextURI>
@@ -707,7 +704,7 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   // 600 ~ 699	TBD	一般动作错误，有UPnP论坛技术委员会定义
   // 700 ~ 799	TBD	面向标准动作的特定错误，由 UPnP 论坛工作委员会定义
   // 800 ~ 899	TBD	面向非标准动作的特定错误，由 UPnP 厂商定义
-  static String error(int errorCode,String errorDescription){
+  static String error(int errorCode, String errorDescription) {
     return '''<?xml version="1.0" encoding="UTF-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
  <s:Body>
@@ -1102,56 +1099,84 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 
 /// dlna 事件
 enum DlnaEvent {
-  setUri, play, pause, stop, seek, getPositionInfo, getTransportInfo, getVolume
+  setUri,
+  play,
+  pause,
+  stop,
+  seek,
+  getPositionInfo,
+  getTransportInfo,
+  getVolume,
+  getMediaInfo
 }
+
 ///dlna 事件枚举拓展
 extension DlnaEventExt on DlnaEvent {
-  String get value =>
-      ['SetAVTransportURI',
-        'Play','Pause','Stop','Seek',
-        'GetPositionInfo','GetTransportInfo','GetVolume'][index];
+  String get value => [
+        'SetAVTransportURI',
+        'Play',
+        'Pause',
+        'Stop',
+        'Seek',
+        'GetPositionInfo',
+        'GetTransportInfo',
+        'GetVolume',
+        'GetMediaInfo'
+      ][index];
 }
 
 class DlnaServer {
   String? _name;
 
-  _ServerListen? _serverListen;
+  final Map<String,_ServerListen> _serverMap = {};
 
-  DlnaServer({String name = ""}){
+  DlnaServer({String name = ""}) {
     _name = name;
   }
+
   /// 启动dlna 服务
   void start(DlnaAction action) async {
     var ipList = await _getActiveLocalIpList();
-    var ip = ipList[0];
     var port = 8888;
     var name = _name;
-    if(name == null || name.isEmpty){
-      name = "flutter dlna $ip:$port";
+    if (name == null || name.isEmpty) {
+      name = "Watch together";
     }
-    _xmlReplay = _XmlReplay(ip, port, name);
+    for (var ip in ipList) {
+      _startListenWithIp(ip, port, name, action);
+    }
+  }
 
-    _Handler(ip,port,action);
-
+  /// 如果电脑连接了多个网段，开启多个网段服务
+  void _startListenWithIp(String ip, int port, String name, DlnaAction action) {
+    var xmlReplay = _XmlReplay(ip, port, name);
+    _Handler(ip, port, action, xmlReplay);
     //启动dlna 服务
-    _serverListen = _ServerListen();
-    _serverListen?.start(ip, port);
+    var serverListen = _ServerListen(xmlReplay);
+    _serverMap[ip] = serverListen;
+    serverListen.start(ip, port);
   }
 
   ///停止接收投屏
   void stop() {
-    _serverListen?.stop();
+    for (var server in _serverMap.values) {
+      server.stop();
+    }
+    _serverMap.clear();
   }
 }
 
 /// dlna 监听客户端信息
-class _ServerListen{
+class _ServerListen {
   Timer? _sender;
   Timer? _receiver;
   RawDatagramSocket? _socketServer;
+  final _XmlReplay _xmlReplay;
+
+  _ServerListen(this._xmlReplay);
 
   // 监听客户端信息，并广播自身
-  void start(String host,int port,{reusePort = true}) async {
+  void start(String host, int port, {reusePort = true}) async {
     stop();
     // udp 加入组播网段，监听客户端信息
     _socketServer = await RawDatagramSocket.bind(
@@ -1159,7 +1184,7 @@ class _ServerListen{
         reusePort: reusePort);
     // https://github.com/dart-lang/sdk/issues/42250 截止到 dart 2.13.4 仍存在问题,期待新版修复
     // 修复IOS joinMulticast 的问题
-    if (Platform.isIOS) {
+    if (Platform.isIOS || Platform.isMacOS) {
       final List<NetworkInterface> interfaces = await NetworkInterface.list(
         includeLinkLocal: false,
         type: InternetAddress.anyIPv4.type,
@@ -1175,9 +1200,9 @@ class _ServerListen{
       _socketServer!.joinMulticast(_UPNP_AddressIPv4);
     }
     //广播自身信息
-    var serverBroadcast =  _ServerBroadcast(_socketServer!,host,port);
+    var serverBroadcast = _ServerBroadcast(_socketServer!, host, port);
     _sender = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
-        serverBroadcast.broadcast();
+      serverBroadcast.broadcast();
     });
 
     // 读取接收信息
@@ -1192,7 +1217,8 @@ class _ServerListen{
       // print('Datagram from ${d.address.address}:${d.port}: ${message}');
       try {
         // 分析接收到的数据
-        var serverParser = _ServerParser(message,clientAddress,clientPort,_socketServer!);
+        var serverParser =
+            _ServerParser(message, clientAddress, clientPort, _socketServer!, _xmlReplay);
         serverParser.get();
       } catch (e) {
         if (kDebugMode) {
@@ -1211,11 +1237,12 @@ class _ServerListen{
 }
 
 /// dlna 服务端广播信息
-class _ServerBroadcast{
+class _ServerBroadcast {
   final String _host; // 本机ip
   final int _port; //本机端口
   final RawDatagramSocket _socketServer;
-  _ServerBroadcast(this._socketServer,this._host,this._port);
+
+  _ServerBroadcast(this._socketServer, this._host, this._port);
 
   /// 广播信息
   void broadcast() async {
@@ -1229,7 +1256,7 @@ class _ServerBroadcast{
   }
 
   /// udp 发送不同协议的搜索信息
-  void _search(String st){
+  void _search(String st) {
     var text = [
       'M-SEARCH * HTTP/1.1',
       'HOST: 239.255.255.250:1900',
@@ -1243,7 +1270,7 @@ class _ServerBroadcast{
   }
 
   /// udp 发送不同协议的通知信息
-  void _notify(String nt){
+  void _notify(String nt) {
     var text = [
       'NOTIFY * HTTP/1.1',
       'HOST: 239.255.255.250:1900',
@@ -1258,57 +1285,60 @@ class _ServerBroadcast{
     ].join('\r\n');
     _socketServer.send(text.codeUnits, _UPNP_AddressIPv4, _UPNP_PORT);
   }
-
 }
 
-
 /// 服务端解析
-class _ServerParser{
+class _ServerParser {
   final String _message; //客户端发来的数据
   final InternetAddress _clientAddress; //客户端地址
   final int _clientPort; //客户端端口
   final RawDatagramSocket _socket; //socket
   late List<String> _lines;
+  late final _XmlReplay _xmlReplay;
 
-  _ServerParser(this._message,this._clientAddress,this._clientPort,this._socket){
+  _ServerParser(
+      this._message,
+      this._clientAddress,
+      this._clientPort,
+      this._socket,
+      this._xmlReplay) {
     final lines = _message.split('\n');
     _lines = lines;
   }
 
-  void get(){
+  void get() {
     final arr = _lines.first.split(' ');
     if (arr.length < 3) {
       return;
     }
     // 请求方法
     final method = arr[0].toUpperCase();
-    if ( method == "HTTP/1.1" || method == "HTTP/1.0") {
+    if (method == "HTTP/1.1" || method == "HTTP/1.0") {
       // 如果是普通get请求，则回应
       mSearch();
-    }else if (method == "M-SEARCH"){
+    } else if (method == "M-SEARCH") {
       mSearch();
     }
   }
 
   /// 收到客户端的搜索请求 （可以原端口返回查询结果，也可以不管，让服务器自己广播）
-  void mSearch(){
-    var data = _xmlReplay?.alive();
-    if(data == null) return;
-    _socket.send(data.codeUnits, _clientAddress,_clientPort);
+  void mSearch() {
+    var data = _xmlReplay.alive();
+    _socket.send(data.codeUnits, _clientAddress, _clientPort);
   }
 }
 
 ///服务端解析客户端发送来的xml
-class _ServerXmlParser{
+class _ServerXmlParser {
   final String text;
   final XmlDocument doc;
 
   _ServerXmlParser(this.text) : doc = XmlDocument.parse(text);
 
   ///获取客户端的指令
-  DlnaEvent? getAction(){
+  DlnaEvent? getAction() {
     for (var element in DlnaEvent.values) {
-      if(_hasAction(element.value)){
+      if (_hasAction(element.value)) {
         return element;
       }
     }
@@ -1316,11 +1346,11 @@ class _ServerXmlParser{
   }
 
   ///获取xml 标签内的值
-  String getElementText(String element){
+  String getElementText(String element) {
     var text = "";
     try {
       text = doc.findAllElements(element).first.text;
-    }catch (e){
+    } catch (e) {
       if (kDebugMode) {
         print(e);
       }
@@ -1329,23 +1359,26 @@ class _ServerXmlParser{
   }
 
   ///判断 action是否存在
-  bool _hasAction(String action){
+  bool _hasAction(String action) {
     String a = action;
-    if(!action.startsWith('u:')){
-      a ="u:$a";
+    if (!action.startsWith('u:')) {
+      a = "u:$a";
     }
     return doc.findAllElements(a).isNotEmpty;
   }
 }
 
 /// 服务端处理客户端的 http 请求
-class _Handler{
+class _Handler {
   late HttpServer _httpServer;
   late DlnaAction _action;
+  late _XmlReplay _xmlReplay;
+
   /// 开启http服务器
-  _Handler(String ip,int port,DlnaAction action) {
+  _Handler(String ip, int port, DlnaAction action,_XmlReplay xmlReplay) {
     _action = action;
-    HttpServer.bind(ip, port).then((value){
+    _xmlReplay = xmlReplay;
+    HttpServer.bind(ip, port).then((value) {
       _httpServer = value;
       listen();
     });
@@ -1355,24 +1388,24 @@ class _Handler{
   void listen() async {
     _httpServer.forEach((request) {
       var method = request.method;
-      if (method == 'GET'){
+      if (method == 'GET') {
         doGet(request);
-      }else if (method == 'POST'){
+      } else if (method == 'POST') {
         doPost(request);
       }
     });
   }
 
   ///处理客户端get请求
-  void doGet(HttpRequest request){
+  void doGet(HttpRequest request) {
     var path = request.uri.path;
-    var response  = request.response;
+    var response = request.response;
     if (kDebugMode) {
       print(path);
     }
-   if (path.startsWith('/dlna/info.xml')){
+    if (path.startsWith('/dlna/info.xml')) {
       _respDesc(response);
-    } else if (path.startsWith('/dlna/Render/AVTransport_scpd.xml')){
+    } else if (path.startsWith('/dlna/Render/AVTransport_scpd.xml')) {
       _scpd(response);
     } else {
       _error(response);
@@ -1381,9 +1414,9 @@ class _Handler{
   }
 
   ///处理客户端post请求
-  void doPost(HttpRequest request) async{
+  void doPost(HttpRequest request) async {
     var path = request.uri.path;
-    var response  = request.response;
+    var response = request.response;
     ContentType? contentType = request.headers.contentType;
     if (kDebugMode) {
       print(path);
@@ -1398,28 +1431,30 @@ class _Handler{
         print("post content = $body");
       }
       // 解析 post 的内容，获取参数
-      if (contentType?.mimeType == 'application/json') { // json 类型
+      if (contentType?.mimeType == 'application/json') {
+        // json 类型
         // dlna 类型基本为xml，json 暂不处理
         return;
-      }else if (contentType?.mimeType == 'text/xml'){ //dlna 客户端类型
+      } else if (contentType?.mimeType == 'text/xml') {
+        //dlna 客户端类型
         // 解析 xml
         xmlParser = _ServerXmlParser(body);
         action = xmlParser.getAction();
       }
-    } catch(e){
+    } catch (e) {
       response.statusCode = HttpStatus.internalServerError;
       response.write('Exception during file I/O: $e.');
       response.close();
       return;
     }
-    if(xmlParser == null) {
+    if (xmlParser == null) {
       response.close();
       return;
     }
     response.headers.add('Content-type', 'application/json');
     response.headers.add('Access-Control-Allow-Origin', '*');
     String data = "";
-    switch (action){
+    switch (action) {
       case DlnaEvent.setUri:
         //获取客户端传来的 uri
         var uri = xmlParser.getElementText('CurrentURI');
@@ -1445,6 +1480,9 @@ class _Handler{
       case DlnaEvent.getTransportInfo:
         data = _XmlReplay.trans();
         break;
+      case DlnaEvent.getMediaInfo:
+        data = _XmlReplay.mediainfo();
+        break;
       case DlnaEvent.getVolume:
         data = _XmlReplay.volume();
         break;
@@ -1467,15 +1505,15 @@ class _Handler{
   }
 
   ///返回客户端描述文件
-  void _respDesc(HttpResponse response){
+  void _respDesc(HttpResponse response) {
     response.headers.add('Content-type', 'application/json');
     response.headers.add('Access-Control-Allow-Origin', '*');
-    var data = _xmlReplay?.desc() ?? "";
+    var data = _xmlReplay.desc();
     response.write(data);
   }
 
   /// 返回客户端服务描述文件
-  void _scpd(HttpResponse response){
+  void _scpd(HttpResponse response) {
     response.headers.add('Content-type', 'application/json');
     response.headers.add('Access-Control-Allow-Origin', '*');
     var data = _XmlReplay.scpd();
@@ -1483,7 +1521,7 @@ class _Handler{
   }
 
   /// 返回404
-  void _error(HttpResponse response){
+  void _error(HttpResponse response) {
     response.statusCode = HttpStatus.notFound; //404
     response.headers.add('Content-type', 'application/json');
     response.headers.add('Access-Control-Allow-Origin', '*');
@@ -1491,40 +1529,45 @@ class _Handler{
   }
 
   /// 设置播放地址
-  void _setUri(String uri){
+  void _setUri(String uri) {
     _PlayStatus.url = uri;
     _action.setUrl(uri);
     if (kDebugMode) {
       print(uri);
     }
   }
+
   /// 客户端请求播放视频
-  void _play(){
+  void _play() {
     _action.play();
     _PlayStatus.playing = true;
     _PlayStatus.stopped = false;
   }
+
   /// 客户端请求暂停视频
-  void _pause(){
+  void _pause() {
     _action.pause();
     _PlayStatus.playing = false;
   }
+
   /// 客户端请求停止视频
-  void _stop(){
+  void _stop() {
     _action.stop();
     _PlayStatus.playing = false;
     _PlayStatus.stopped = true;
   }
+
   /// 客户端请求跳转进度位置
   /// [sk] : 00:00:12
-  void _seek(String sk){
+  void _seek(String sk) {
     //进度转秒数
     int position = _PositionParser.toInt(sk);
     _action.seek(position);
     _PlayStatus.time = position;
   }
+
   /// 客户端请求获取服务端进度位置
-  void _getPosition(){
+  void _getPosition() {
     var position = _action.getPosition();
     var duration = _action.getDuration();
     var volume = _action.getVolume();
@@ -1540,18 +1583,25 @@ class _Handler{
 /// 客户端和服务端交互事件
 abstract class DlnaAction {
   void setUrl(String url);
+
   ///客服端发来 播放指令
   void play();
+
   ///客户端发来 暂停指令
   void pause();
+
   ///客户端发来 停止指令
   void stop();
+
   ///客户端发送seek 指令，播放器 跳转到对应进度
   void seek(int position);
+
   ///客户端 获取播放进度
   int getPosition();
+
   ///客户端 获取视频长度
   int getDuration();
+
   ///客户端 获取视频音量
   int getVolume();
 }

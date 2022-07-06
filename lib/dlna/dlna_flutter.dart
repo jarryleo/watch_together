@@ -39,7 +39,7 @@ String _trimLeading(String pattern, String from) {
 
 /// 秒数转成时分秒
 String _secondToTime(int second) {
-  var time = const Duration(seconds: 5000).toString();
+  var time = Duration(seconds: second).toString();
   return time.split(".")[0];
 }
 
@@ -1531,6 +1531,9 @@ class _Handler{
     _PlayStatus.time = position;
     _PlayStatus.duration = duration;
     _PlayStatus.volume = volume;
+    if (kDebugMode) {
+      print("position = $position , duration = $duration, volume = $volume");
+    }
   }
 }
 

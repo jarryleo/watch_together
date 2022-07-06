@@ -77,6 +77,15 @@ class _MyHomePageState extends State<MyHomePage> implements DlnaAction {
   }
 
   @override
+  int getDuration() {
+    return _controller.value.duration.inSeconds;
+  }
+
+  @override
+  int getVolume() {
+    return _controller.value.volume.toInt();
+  }
+  @override
   void pause() {
     _controller.pause();
   }
@@ -104,4 +113,5 @@ class _MyHomePageState extends State<MyHomePage> implements DlnaAction {
     _controller.pause();
     _controller.seekTo(const Duration(seconds: 0));
   }
+
 }

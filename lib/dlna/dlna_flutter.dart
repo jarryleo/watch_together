@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:xml/xml.dart';
 
@@ -365,7 +366,9 @@ class _Parser {
       lines.removeAt(0);
       return await onNotify(lines);
     } else {
-      print(message);
+      if (kDebugMode) {
+        print(message);
+      }
     }
   }
 
@@ -459,7 +462,9 @@ class Search {
         String message = String.fromCharCodes(replay.data).trim();
         await m.onMessage(message);
       } catch (e) {
-        print(e);
+        if (kDebugMode) {
+          print(e);
+        }
       }
     });
 
@@ -474,7 +479,9 @@ class Search {
       try {
         await m.onMessage(message);
       } catch (e) {
-        print(e);
+        if (kDebugMode) {
+          print(e);
+        }
       }
     });
     return m;
@@ -508,7 +515,9 @@ class _PlayStatus {
   static bool stopped = true; // true 停止，false 播放或暂停
   static String url = "";
   static String meta = "";
+  static int volume = 30; //音量 0-100
   static int time = 0; //播放进度，单位秒
+  static int duration = 0; //视频长度，单位秒
 }
 
 /// dlna 服务端常用 xml 指令 (对dlna 客服端的回复)
@@ -630,6 +639,17 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 </s:Envelope>''';
   }
 
+  /// 客户端请求获媒体音量信息回复
+  static String volume() {
+    return '''<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+    <s:Body>
+        <u:GetVolumeResponse xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1">
+            <CurrentVolume>${_PlayStatus.volume}</CurrentVolume>
+        </u:GetVolumeResponse>
+    </s:Body>
+</s:Envelope>''';
+  }
+
   /// 客户端请求获取播放进度回复信息
   static String positionInfo() {
     return '''<?xml version="1.0" encoding="UTF-8"?>
@@ -637,7 +657,7 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 	<s:Body>
 		<u:GetPositionInfoResponse xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
 			<Track>0</Track>
-			<TrackDuration>02:00:00</TrackDuration>
+			<TrackDuration>${_secondToTime(_PlayStatus.duration)}</TrackDuration>
 			<TrackMetaData>${_htmlEncode(_PlayStatus.meta)}</TrackMetaData>
 			<TrackURI>${_htmlEncode(_PlayStatus.url)}</TrackURI>
 			<RelTime>${_secondToTime(_PlayStatus.time)}</RelTime>
@@ -1080,25 +1100,16 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   }
 }
 
-class _Dlna{
-   static final Map<String,Device> devices = {};
-   static final Map<String,DeviceInfo> infos = {};
-
-  /// 获取所有信息
-  static get getInfos => infos;
-  /// 获取缓存设备
-   static Device? getDevice(String url){
-    return devices[url];
-  }
-}
-
 /// dlna 事件
 enum DlnaEvent {
-  setUri, play, pause, stop, seek, getPositionInfo
+  setUri, play, pause, stop, seek, getPositionInfo, getTransportInfo, getVolume
 }
 ///dlna 事件枚举拓展
 extension DlnaEventExt on DlnaEvent {
-  String get value => ['SetAVTransportURI','Play','Pause','Stop','Seek','GetPositionInfo'][index];
+  String get value =>
+      ['SetAVTransportURI',
+        'Play','Pause','Stop','Seek',
+        'GetPositionInfo','GetTransportInfo','GetVolume'][index];
 }
 
 class DlnaServer {
@@ -1184,7 +1195,9 @@ class _ServerListen{
         var serverParser = _ServerParser(message,clientAddress,clientPort,_socketServer!);
         serverParser.get();
       } catch (e) {
-        print(e);
+        if (kDebugMode) {
+          print(e);
+        }
       }
     });
   }
@@ -1274,8 +1287,6 @@ class _ServerParser{
       mSearch();
     }else if (method == "M-SEARCH"){
       mSearch();
-    } else if (method == "NOTIFY"){
-      notify();
     }
   }
 
@@ -1284,31 +1295,6 @@ class _ServerParser{
     var data = _xmlReplay?.alive();
     if(data == null) return;
     _socket.send(data.codeUnits, _clientAddress,_clientPort);
-  }
-
-  /// 收到别人（别的可投屏设备）的存活广播
-  void notify() async{
-    String url = '';
-    for (var element in _lines) {
-      final arr = element.split(':');
-      final key = arr[0].trim().toUpperCase();
-      if (key == "LOCATION") {
-        url = arr[1].trim();
-      }
-    }
-    if (url != '') {
-      getInfo(url);
-    }
-  }
-
-  /// 请求地址获取设备信息
-  void getInfo(String url) async {
-    final target = Uri.parse(url);
-    final body = await _Http.get(target);
-    final deviceInfo = _XmlParser(body).parse(target);
-    final device = Device(deviceInfo);
-    _Dlna.devices[url] = device;
-    _Dlna.infos[url] = deviceInfo;
   }
 }
 
@@ -1335,7 +1321,9 @@ class _ServerXmlParser{
     try {
       text = doc.findAllElements(element).first.text;
     }catch (e){
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
     return text;
   }
@@ -1379,11 +1367,10 @@ class _Handler{
   void doGet(HttpRequest request){
     var path = request.uri.path;
     var response  = request.response;
-    print(path);
-
-    if (path.startsWith('/info')){
-      _info(response);
-    } else if (path.startsWith('/dlna/info.xml')){
+    if (kDebugMode) {
+      print(path);
+    }
+   if (path.startsWith('/dlna/info.xml')){
       _respDesc(response);
     } else if (path.startsWith('/dlna/Render/AVTransport_scpd.xml')){
       _scpd(response);
@@ -1398,14 +1385,18 @@ class _Handler{
     var path = request.uri.path;
     var response  = request.response;
     ContentType? contentType = request.headers.contentType;
-    print(path);
+    if (kDebugMode) {
+      print(path);
+    }
     //if (contentType?.mimeType != 'application/json') return;
     String body;
     _ServerXmlParser? xmlParser;
     DlnaEvent? action;
     try {
       body = await utf8.decoder.bind(request).join();
-      print("post content = $body");
+      if (kDebugMode) {
+        print("post content = $body");
+      }
       // 解析 post 的内容，获取参数
       if (contentType?.mimeType == 'application/json') { // json 类型
         // dlna 类型基本为xml，json 暂不处理
@@ -1451,6 +1442,12 @@ class _Handler{
         _getPosition();
         data = _XmlReplay.positionInfo();
         break;
+      case DlnaEvent.getTransportInfo:
+        data = _XmlReplay.trans();
+        break;
+      case DlnaEvent.getVolume:
+        data = _XmlReplay.volume();
+        break;
       case DlnaEvent.seek:
         //获取进度信息
         var sk = xmlParser.getElementText('Target');
@@ -1458,20 +1455,15 @@ class _Handler{
         data = _XmlReplay.seekResp();
         break;
       default:
-        _error(response);
-        response.close();
-        return;
+        //401	Invalid Action
+        data = _XmlReplay.error(401, 'Invalid Action');
+        break;
+    }
+    if (kDebugMode) {
+      print("response = $data");
     }
     response.write(data);
     response.close();
-  }
-
-  ///返回客户端设备信息
-  void _info(HttpResponse response){
-    response.headers.add('Content-type', 'application/json');
-    response.headers.add('Access-Control-Allow-Origin', '*');
-    var json = jsonEncode(_Dlna.infos);
-    response.write(json);
   }
 
   ///返回客户端描述文件
@@ -1500,8 +1492,11 @@ class _Handler{
 
   /// 设置播放地址
   void _setUri(String uri){
+    _PlayStatus.url = uri;
     _action.setUrl(uri);
-    print(uri);
+    if (kDebugMode) {
+      print(uri);
+    }
   }
   /// 客户端请求播放视频
   void _play(){
@@ -1524,23 +1519,36 @@ class _Handler{
   /// [sk] : 00:00:12
   void _seek(String sk){
     //进度转秒数
-    int seek = _PositionParser.toInt(sk);
-    _action.seek(seek);
-    _PlayStatus.time = seek;
+    int position = _PositionParser.toInt(sk);
+    _action.seek(position);
+    _PlayStatus.time = position;
   }
   /// 客户端请求获取服务端进度位置
   void _getPosition(){
     var position = _action.getPosition();
+    var duration = _action.getDuration();
+    var volume = _action.getVolume();
     _PlayStatus.time = position;
+    _PlayStatus.duration = duration;
+    _PlayStatus.volume = volume;
   }
 }
 
 /// 客户端和服务端交互事件
 abstract class DlnaAction {
   void setUrl(String url);
+  ///客服端发来 播放指令
   void play();
+  ///客户端发来 暂停指令
   void pause();
+  ///客户端发来 停止指令
   void stop();
+  ///客户端发送seek 指令，播放器 跳转到对应进度
   void seek(int position);
-  int getPosition(){return _PlayStatus.time;}
+  ///客户端 获取播放进度
+  int getPosition();
+  ///客户端 获取视频长度
+  int getDuration();
+  ///客户端 获取视频音量
+  int getVolume();
 }

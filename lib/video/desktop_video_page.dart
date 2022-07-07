@@ -4,7 +4,7 @@ import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'dlna_flutter.dart';
+import '../dlna/dlna_flutter.dart';
 
 
 
@@ -86,7 +86,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements DlnaActi
         appBar: AppBar(
           title: Text(widget.title),
         ),
-        body: Center(child: Platform.isWindows
+        body: Container(child: Platform.isWindows
             ? NativeVideo(
           player: player,
           width: 640,

@@ -2,7 +2,7 @@ import 'package:fijkplayer/fijkplayer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'dlna_flutter.dart';
+import '../dlna/dlna_flutter.dart';
 
 class PhoneVideoPage extends StatefulWidget {
   const PhoneVideoPage({Key? key, required this.title}) : super(key: key);
@@ -37,7 +37,17 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements DlnaAction {
         appBar: AppBar(
           title: Text(widget.title),
         ),
-        body: Center(child: FijkView(player: player)));
+        body: Column(
+          children: [
+            AspectRatio(
+              aspectRatio: 16.0 / 9.0,
+              child: FijkView(
+                player: player,
+                color: Colors.black,
+              ),
+            )
+          ],
+        ));
   }
 
   @override
@@ -57,7 +67,9 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements DlnaAction {
 
   @override
   void pause() {
-    player.pause();
+    if (player.isPlayable()) {
+      player.pause();
+    }
   }
 
   @override
@@ -78,5 +90,6 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements DlnaAction {
   @override
   void stop() {
     player.stop();
+    player.reset();
   }
 }

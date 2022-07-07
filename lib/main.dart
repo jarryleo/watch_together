@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter/material.dart';
-import 'package:watch_together/dlna/desktop_video_page.dart';
+import 'package:watch_together/video/desktop_video_page.dart';
 
-import 'dlna/phone_video_page.dart';
+import 'video/phone_video_page.dart';
 
 void main() async {
   if (Platform.isWindows || Platform.isLinux) {
@@ -20,16 +20,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'Flutter Dlna',
+        title: 'Watch together',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
         home: Platform.isAndroid || Platform.isIOS
-            ? const PhoneVideoPage(
-                title: 'Flutter Dlna demo',
-              )
+            ? const PhoneVideoPage(title: 'Watch together')
             : Platform.isWindows || Platform.isLinux
-                ? const DesktopVideoPage(title: 'Flutter Dlna demo')
+                ? const DesktopVideoPage(title: 'Watch together')
                 : const Center(child: Text("该设备不支持！")));
   }
 }

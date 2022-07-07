@@ -1,9 +1,15 @@
+import 'dart:io';
+
+import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:watch_together/dlna/desktop_video_page.dart';
 
-import 'dlna/dlna_flutter.dart';
+import 'dlna/phone_video_page.dart';
 
-void main() {
+void main() async {
+  if (Platform.isWindows || Platform.isLinux) {
+    await DartVLC.initialize(useFlutterNativeView: true);
+  }
   runApp(const MyApp());
 }
 
@@ -14,98 +20,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Dlna',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Dlna demo'),
-    );
+        title: 'Flutter Dlna',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: Platform.isAndroid || Platform.isIOS
+            ? const PhoneVideoPage(
+                title: 'Flutter Dlna demo',
+              )
+            : Platform.isWindows || Platform.isLinux
+                ? const DesktopVideoPage(title: 'Flutter Dlna demo')
+                : const Center(child: Text("该设备不支持！")));
   }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> implements DlnaAction {
-  DlnaServer dlnaServer = DlnaServer();
-
-  VideoPlayerController? _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    dlnaServer.start(this);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _controller?.dispose();
-    dlnaServer.stop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-          child: _controller?.value.isInitialized == true
-              ? AspectRatio(
-                  aspectRatio: _controller!.value.aspectRatio,
-                  child: VideoPlayer(_controller!))
-              : const Text("没有可播放的视频")),
-    );
-  }
-
-  @override
-  int getPosition() {
-    return _controller?.value.position.inSeconds ?? 0;
-  }
-
-  @override
-  int getDuration() {
-    return _controller?.value.duration.inSeconds  ?? 0;
-  }
-
-  @override
-  int getVolume() {
-    return _controller?.value.volume.toInt()  ?? 0;
-  }
-  @override
-  void pause() {
-    _controller?.pause();
-  }
-
-  @override
-  void play() {
-    _controller?.play();
-  }
-
-  @override
-  void seek(int position) {
-    _controller?.seekTo(Duration(seconds: position));
-  }
-
-  @override
-  void setUrl(String url) {
-    _controller = VideoPlayerController.network(url)
-      ..initialize().then((value) {
-        setState(() {});
-      });
-  }
-
-  @override
-  void stop() {
-    _controller?.pause();
-    _controller?.seekTo(const Duration(seconds: 0));
-  }
-
 }

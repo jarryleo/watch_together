@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 
 import 'package:watch_together/main.dart';
+import 'package:watch_together/remote/model.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
@@ -96,5 +97,14 @@ void main() {
   test("enum", (){
     final actionList = DlnaEvent.values.map((e) => e.value);
     print(actionList);
+  });
+
+  test("json", (){
+    var model = PlayStateModel();
+    model.action = "play";
+    model.position = 11;
+    model.timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    print(JsonParse.modelToJson(model));
   });
 }

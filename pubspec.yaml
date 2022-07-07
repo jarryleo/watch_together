@@ -32,6 +32,9 @@ dependencies:
   provider: ^6.0.2
   # 视频播放
   video_player: ^2.4.5
+  flick_video_player: ^0.5.0
+#  yoyo_player: ^0.1.0
+#  dart_vlc: ^0.3.0
   # dlna 投屏库
   dlna_dart: ^0.0.5
   # 网络请求库

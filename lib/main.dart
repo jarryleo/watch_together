@@ -41,7 +41,6 @@ class _MyHomePageState extends State<MyHomePage> implements DlnaAction {
   void initState() {
     super.initState();
     dlnaServer.start(this);
-
   }
 
   @override

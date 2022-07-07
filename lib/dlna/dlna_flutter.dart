@@ -420,68 +420,40 @@ class Search {
     socketServer = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, _UPNP_PORT,
         reusePort: reusePort);
-    // https://github.com/dart-lang/sdk/issues/42250 截止到 dart 2.13.4 仍存在问题,期待新版修复
-    // 修复IOS joinMulticast 的问题
-    if (Platform.isIOS || Platform.isMacOS) {
-      final List<NetworkInterface> interfaces = await NetworkInterface.list(
-        includeLinkLocal: false,
-        type: InternetAddress.anyIPv4.type,
-        includeLoopback: false,
-      );
-      for (final interface in interfaces) {
-        final value = Uint8List.fromList(
-            _UPNP_AddressIPv4.rawAddress + interface.addresses[0].rawAddress);
-        socketServer!.setRawOption(
-            RawSocketOption(RawSocketOption.levelIPv4, 12, value));
-      }
-    } else {
-      socketServer!.joinMulticast(_UPNP_AddressIPv4);
-    }
-    final r = Random();
+    //加入dlna 协议组播
+    socketServer!.joinMulticast(_UPNP_AddressIPv4);
     final socketClient =
         await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     sender = Timer.periodic(const Duration(seconds: 3), (Timer t) async {
-      // 这里的 st 随机没有明白是做什么
-      final n = r.nextDouble();
-      var st = "ssdp:all";
-      if (n > 0.3) {
-        if (n > 0.6) {
-          st = "urn:schemas-upnp-org:service:AVTransport:1";
-        } else {
-          st = "urn:schemas-upnp-org:device:MediaRenderer:1";
-        }
-      }
-      _search(socketClient, st);
-      final replay = socketClient.receive();
-      if (replay == null) {
-        return;
-      }
-      try {
-        String message = String.fromCharCodes(replay.data).trim();
-        await m.onMessage(message);
-      } catch (e) {
-        if (kDebugMode) {
-          print(e);
-        }
-      }
+      // 发送3种不同的搜索协议
+      _search(socketClient, "ssdp:all");
+      _parseReceiver(socketClient, m);
+      _search(socketClient, "urn:schemas-upnp-org:service:AVTransport:1");
+      _parseReceiver(socketClient, m);
+      _search(socketClient, "urn:schemas-upnp-org:device:MediaRenderer:1");
+      _parseReceiver(socketClient, m);
     });
-
+      //接收投屏设备广播的协议
     receiver = Timer.periodic(const Duration(seconds: 2), (Timer t) async {
-      final d = socketServer!.receive();
-      if (d == null) {
-        return;
-      }
-      String message = String.fromCharCodes(d.data).trim();
-      // print('Datagram from ${d.address.address}:${d.port}: ${message}');
-      try {
-        await m.onMessage(message);
-      } catch (e) {
-        if (kDebugMode) {
-          print(e);
-        }
-      }
+      _parseReceiver(socketServer!, m);
     });
     return m;
+  }
+
+  void _parseReceiver(RawDatagramSocket socket , Manager manager) async {
+    // 如果有原路返回的数据则解析
+    final replay = socket.receive();
+    if (replay == null) {
+      return;
+    }
+    try {
+      String message = String.fromCharCodes(replay.data).trim();
+      await manager.onMessage(message);
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
   }
 
   /// udp 发送不同协议的搜索信息
@@ -495,7 +467,8 @@ class Search {
       '',
       '',
     ].join('\r\n');
-    socket.send(text.codeUnits, _UPNP_AddressIPv4, _UPNP_PORT);
+    socket.send(utf8.encode(text), _UPNP_AddressIPv4, _UPNP_PORT);
+    //socket.send(text.codeUnits, _UPNP_AddressIPv4, _UPNP_PORT);
   }
 
   stop() {
@@ -549,7 +522,8 @@ class _XmlReplay {
   /// 服务端设备描述
   String desc() {
     return '''
-    <root xmlns="urn:schemas-upnp-org:device-1-0">
+    <root xmlns="urn:schemas-upnp-org:device-1-0" xmlns:dlna="urn:schemas-dlna-org:device-1-0">
+    <URLBase>http://$ip:$port</URLBase>
     <device>
         <deviceType>urn:schemas-upnp-org:device:MediaRenderer:1</deviceType>
         <presentationURL>/</presentationURL>
@@ -561,6 +535,9 @@ class _XmlReplay {
         <modelURL>https://github.com/suconghou/dlna-dart</modelURL>
         <UPC>000000000013</UPC>
         <UDN>uuid:$_uuid</UDN>
+        <dlna:x_dlnadoc xmlns:dlna="urn:schemas-dlna-org:device-1-0">
+             DMR-1.50
+        </dlna:x_dlnadoc>
         <serviceList>
             <service>
                 <serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType>
@@ -569,9 +546,22 @@ class _XmlReplay {
                 <controlURL>/dlna/_urn:schemas-upnp-org:service:AVTransport_control</controlURL>
                 <eventSubURL>/dlna/_urn:schemas-upnp-org:service:AVTransport_event</eventSubURL>
             </service>
+            <service>
+                <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
+                <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
+                <SCPDURL>/dlna/Render/AVTransport_scpd.xml</SCPDURL>
+                <controlURL>/dlna/_urn:schemas-upnp-org:service:ConnectionManager_control</controlURL>
+                <eventSubURL>/dlna/_urn:schemas-upnp-org:service:ConnectionManager_event</eventSubURL>
+            </service>
+            <service>
+                <serviceType>urn:schemas-upnp-org:service:RenderingControl:1</serviceType>
+                <serviceId>urn:upnp-org:serviceId:RenderingControl</serviceId>
+                <SCPDURL>/dlna/Render/AVTransport_scpd.xml</SCPDURL>
+                <controlURL>/dlna/_urn:schemas-upnp-org:service:Rendering_control</controlURL>
+                <eventSubURL>/dlna/_urn:schemas-upnp-org:service:Rendering_event</eventSubURL>
+            </service>
         </serviceList>
     </device>
-    <URLBase>http://$ip:$port</URLBase>
     </root>''';
   }
 
@@ -1176,29 +1166,14 @@ class _ServerListen {
   _ServerListen(this._xmlReplay);
 
   // 监听客户端信息，并广播自身
-  void start(String host, int port, {reusePort = true}) async {
+  void start(String host, int port, {reusePort = false}) async {
     stop();
     // udp 加入组播网段，监听客户端信息
     _socketServer = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, _UPNP_PORT,
         reusePort: reusePort);
-    // https://github.com/dart-lang/sdk/issues/42250 截止到 dart 2.13.4 仍存在问题,期待新版修复
-    // 修复IOS joinMulticast 的问题
-    if (Platform.isIOS || Platform.isMacOS) {
-      final List<NetworkInterface> interfaces = await NetworkInterface.list(
-        includeLinkLocal: false,
-        type: InternetAddress.anyIPv4.type,
-        includeLoopback: false,
-      );
-      for (final interface in interfaces) {
-        final value = Uint8List.fromList(
-            _UPNP_AddressIPv4.rawAddress + interface.addresses[0].rawAddress);
-        _socketServer!.setRawOption(
-            RawSocketOption(RawSocketOption.levelIPv4, 12, value));
-      }
-    } else {
-      _socketServer!.joinMulticast(_UPNP_AddressIPv4);
-    }
+    //加入组播
+    _socketServer!.joinMulticast(_UPNP_AddressIPv4);
     //广播自身信息
     var serverBroadcast = _ServerBroadcast(_socketServer!, host, port);
     _sender = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
@@ -1246,27 +1221,10 @@ class _ServerBroadcast {
 
   /// 广播信息
   void broadcast() async {
-    _search("ssdp:all");
     _notify("urn:schemas-upnp-org:service:RenderingControl:1");
-    _search("urn:schemas-upnp-org:service:AVTransport:1");
     _notify("urn:schemas-upnp-org:service:AVTransport:1");
-    _search("urn:schemas-upnp-org:device:MediaRenderer:1");
     _notify("urn:schemas-upnp-org:device:MediaRenderer:1");
     _notify("upnp:rootdevice");
-  }
-
-  /// udp 发送不同协议的搜索信息
-  void _search(String st) {
-    var text = [
-      'M-SEARCH * HTTP/1.1',
-      'HOST: 239.255.255.250:1900',
-      'MAN: "ssdp:discover"',
-      'MX: 5',
-      'ST: $st',
-      '',
-      '',
-    ].join('\r\n');
-    _socketServer.send(text.codeUnits, _UPNP_AddressIPv4, _UPNP_PORT);
   }
 
   /// udp 发送不同协议的通知信息
@@ -1283,7 +1241,8 @@ class _ServerBroadcast {
       '',
       '',
     ].join('\r\n');
-    _socketServer.send(text.codeUnits, _UPNP_AddressIPv4, _UPNP_PORT);
+    //_socketServer.send(text.codeUnits, _UPNP_AddressIPv4, _UPNP_PORT);
+    _socketServer.send(utf8.encode(text), _UPNP_AddressIPv4, _UPNP_PORT);
   }
 }
 
@@ -1324,7 +1283,8 @@ class _ServerParser {
   /// 收到客户端的搜索请求 （可以原端口返回查询结果，也可以不管，让服务器自己广播）
   void mSearch() {
     var data = _xmlReplay.alive();
-    _socket.send(data.codeUnits, _clientAddress, _clientPort);
+    //_socket.send(data.codeUnits, _clientAddress, _clientPort);
+    _socket.send(utf8.encode(data), _clientAddress, _clientPort);
   }
 }
 
@@ -1408,7 +1368,9 @@ class _Handler {
     } else if (path.startsWith('/dlna/Render/AVTransport_scpd.xml')) {
       _scpd(response);
     } else {
-      _error(response);
+      //兼容用get发送post指令
+      doPost(request);
+      return;
     }
     response.close();
   }
@@ -1421,37 +1383,25 @@ class _Handler {
     if (kDebugMode) {
       print(path);
     }
-    //if (contentType?.mimeType != 'application/json') return;
+    //if (contentType?.mimeType != 'text/xml') return;
     String body;
     _ServerXmlParser? xmlParser;
     DlnaEvent? action;
     try {
       body = await utf8.decoder.bind(request).join();
       if (kDebugMode) {
-        print("post content = $body");
+        print("client post content = $body");
       }
       // 解析 post 的内容，获取参数
-      if (contentType?.mimeType == 'application/json') {
-        // json 类型
-        // dlna 类型基本为xml，json 暂不处理
-        return;
-      } else if (contentType?.mimeType == 'text/xml') {
-        //dlna 客户端类型
-        // 解析 xml
-        xmlParser = _ServerXmlParser(body);
-        action = xmlParser.getAction();
-      }
+      xmlParser = _ServerXmlParser(body);
+      action = xmlParser.getAction();
     } catch (e) {
       response.statusCode = HttpStatus.internalServerError;
       response.write('Exception during file I/O: $e.');
       response.close();
       return;
     }
-    if (xmlParser == null) {
-      response.close();
-      return;
-    }
-    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Content-type', 'text/xml');
     response.headers.add('Access-Control-Allow-Origin', '*');
     String data = "";
     switch (action) {
@@ -1506,7 +1456,7 @@ class _Handler {
 
   ///返回客户端描述文件
   void _respDesc(HttpResponse response) {
-    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Content-type', 'text/xml');
     response.headers.add('Access-Control-Allow-Origin', '*');
     var data = _xmlReplay.desc();
     response.write(data);
@@ -1514,7 +1464,7 @@ class _Handler {
 
   /// 返回客户端服务描述文件
   void _scpd(HttpResponse response) {
-    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Content-type', 'text/xml');
     response.headers.add('Access-Control-Allow-Origin', '*');
     var data = _XmlReplay.scpd();
     response.write(data);
@@ -1523,7 +1473,7 @@ class _Handler {
   /// 返回404
   void _error(HttpResponse response) {
     response.statusCode = HttpStatus.notFound; //404
-    response.headers.add('Content-type', 'application/json');
+    response.headers.add('Content-type', 'text/xml');
     response.headers.add('Access-Control-Allow-Origin', '*');
     response.write('404 not found');
   }

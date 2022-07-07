@@ -11,6 +11,8 @@
    <application
         android:label="watch_together"
         android:name="${applicationName}"
+        android:networkSecurityConfig="@xml/base_network_security_config"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

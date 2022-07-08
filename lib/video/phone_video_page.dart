@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:fijkplayer/fijkplayer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:watch_together/remote/remote.dart';
 
 import '../dlna/dlna_flutter.dart';
 
@@ -13,14 +16,15 @@ class PhoneVideoPage extends StatefulWidget {
   State<PhoneVideoPage> createState() => _PhoneVideoPageState();
 }
 
-class _PhoneVideoPageState extends State<PhoneVideoPage> implements DlnaAction {
+class _PhoneVideoPageState extends State<PhoneVideoPage> implements PlayerAction {
   DlnaServer dlnaServer = DlnaServer();
-
+  late Remote remote;
   FijkPlayer player = FijkPlayer();
 
   @override
   void initState() {
     super.initState();
+    remote = Remote(this,isServer: Platform.isWindows || Platform.isLinux);
     dlnaServer.start(this);
   }
 
@@ -33,6 +37,17 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements DlnaAction {
 
   @override
   Widget build(BuildContext context) {
+    var state = player.state;
+    switch (state){
+      case FijkState.started:
+        remote.play();
+        break;
+      case FijkState.paused:
+        remote.pause();
+        break;
+      default:
+        break;
+    }
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
@@ -42,6 +57,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements DlnaAction {
             AspectRatio(
               aspectRatio: 16.0 / 9.0,
               child: FijkView(
+                panelBuilder: fijkPanel2Builder(),
                 player: player,
                 color: Colors.black,
               ),
@@ -85,11 +101,13 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements DlnaAction {
   @override
   void setUrl(String url) {
     player.setDataSource(url, autoPlay: true);
+    remote.setUrl(url);
   }
 
   @override
   void stop() {
     player.stop();
     player.reset();
+    remote.dispose();
   }
 }

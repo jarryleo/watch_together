@@ -1124,7 +1124,7 @@ class DlnaServer {
   }
 
   /// 启动dlna 服务
-  void start(DlnaAction action) async {
+  void start(PlayerAction action) async {
     var ipList = await _getActiveLocalIpList();
     var port = 8888;
     var name = _name;
@@ -1137,7 +1137,7 @@ class DlnaServer {
   }
 
   /// 如果电脑连接了多个网段，开启多个网段服务
-  void _startListenWithIp(String ip, int port, String name, DlnaAction action) {
+  void _startListenWithIp(String ip, int port, String name, PlayerAction action) {
     var xmlReplay = _XmlReplay(ip, port, name);
     _Handler(ip, port, action, xmlReplay);
     //启动dlna 服务
@@ -1330,11 +1330,11 @@ class _ServerXmlParser {
 /// 服务端处理客户端的 http 请求
 class _Handler {
   late HttpServer _httpServer;
-  late DlnaAction _action;
+  late PlayerAction _action;
   late _XmlReplay _xmlReplay;
 
   /// 开启http服务器
-  _Handler(String ip, int port, DlnaAction action,_XmlReplay xmlReplay) {
+  _Handler(String ip, int port, PlayerAction action,_XmlReplay xmlReplay) {
     _action = action;
     _xmlReplay = xmlReplay;
     HttpServer.bind(ip, port).then((value) {
@@ -1530,7 +1530,7 @@ class _Handler {
 }
 
 /// 客户端和服务端交互事件
-abstract class DlnaAction {
+abstract class PlayerAction {
   void setUrl(String url);
 
   ///客服端发来 播放指令

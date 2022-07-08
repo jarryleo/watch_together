@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../dlna/dlna_flutter.dart';
+import '../remote/remote.dart';
 
 
 
@@ -17,8 +18,9 @@ class DesktopVideoPage extends StatefulWidget {
   State<DesktopVideoPage> createState() => _DesktopVideoPageState();
 }
 
-class _DesktopVideoPageState extends State<DesktopVideoPage> implements DlnaAction {
+class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAction {
   DlnaServer dlnaServer = DlnaServer();
+  late Remote remote;
   Player player = Player(
     id: 0,
     videoDimensions: const VideoDimensions(640, 360),
@@ -29,7 +31,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements DlnaActi
   PositionState position = PositionState();
   PlaybackState playback = PlaybackState();
   GeneralState general = GeneralState();
-  VideoDimensions videoDimensions = VideoDimensions(0, 0);
+  VideoDimensions videoDimensions = const VideoDimensions(0, 0);
   List<Media> medias = <Media>[];
   //List<Device> devices = <Device>[];
   TextEditingController controller = TextEditingController();
@@ -40,6 +42,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements DlnaActi
   @override
   void initState() {
     super.initState();
+    remote = Remote(this,isServer: Platform.isWindows || Platform.isLinux);
     dlnaServer.start(this);
     if (mounted) {
       player.currentStream.listen((current) {
@@ -47,9 +50,15 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements DlnaActi
       });
       player.positionStream.listen((position) {
         setState(() => this.position = position);
+        remote.seek(position.position?.inSeconds??0);
       });
       player.playbackStream.listen((playback) {
         setState(() => this.playback = playback);
+        if(playback.isPlaying){
+          remote.play();
+        }else{
+          remote.pause();
+        }
       });
       player.generalStream.listen((general) {
         setState(() => this.general = general);
@@ -78,6 +87,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements DlnaActi
     super.dispose();
     player.dispose();
     dlnaServer.stop();
+    remote.dispose();
   }
 
   @override
@@ -139,6 +149,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements DlnaActi
   void setUrl(String url) {
     var media  = Media.network(url);
     player.open(media);
+    remote.setUrl(url);
   }
 
   @override

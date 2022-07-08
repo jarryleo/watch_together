@@ -8,7 +8,8 @@ import 'package:watch_together/remote/remote.dart';
 import '../dlna/dlna_flutter.dart';
 
 class PhoneVideoPage extends StatefulWidget {
-  const PhoneVideoPage({Key? key, required this.title}) : super(key: key);
+  Remote remote;
+  PhoneVideoPage(this.remote,{Key? key, required this.title}) : super(key: key);
 
   final String title;
 
@@ -24,7 +25,9 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements PlayerAction
   @override
   void initState() {
     super.initState();
-    remote = Remote(this,isServer: Platform.isWindows || Platform.isLinux);
+    remote = widget.remote;
+    remote.setCallback(this);
+    remote.join("527511");
     dlnaServer.start(this);
   }
 

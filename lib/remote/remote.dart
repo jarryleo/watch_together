@@ -8,40 +8,47 @@ import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/remote/model.dart';
 
 /// 同步服务端地址
-const host = "jarryleo.vicp.cc";
+const host = "bigplans.work";
 const int remotePort = 51127; //服务器端口
 
-///跟服务端交互，获取另一个播放器的 播放状态
+///跟服务端交互，获取 播放状态
 class Remote {
 
-  PlayerAction callback;
+  PlayerAction? _callback;
 
   ///远程状态
-  PlayStateModel? remoteState;
+  final PlayStateModel _remoteState =  PlayStateModel();
 
   RawDatagramSocket? _socket;
-
-  /// 是否是服务端，服务端接收客户端投屏
-  bool _isServer = false;
-  ///客户端地址
-  InternetAddress? clientAddress;
   ///远端地址
   InternetAddress? remoteAddress;
 
-  Remote(this.callback,{isServer = false}){
-    _isServer = isServer;
+  Remote(){
+    Future.microtask((){
+      _start();
+    });
+  }
+
+  void _start() async {
     InternetAddress.lookup(host).then((list){
-      print(list);
+      if (kDebugMode) {
+        print(list);
+      }
       remoteAddress = list.first;
       if(remoteAddress == null) return;
-      RawDatagramSocket.bind(remoteAddress, remotePort).then((socket){
+      RawDatagramSocket.bind(InternetAddress.anyIPv4, remotePort).then((socket){
         _socket = socket;
         _listen();
-      });
-      Timer.periodic(const Duration(seconds: 1), (timer) {
-        _heartbeat();
+        Timer.periodic(const Duration(seconds: 5), (timer) {
+          _heartbeat();
+        });
       });
     });
+  }
+
+  ///设置播放回调
+  void setCallback(PlayerAction callback){
+    _callback = _callback;
   }
 
   /// 接收对面数据
@@ -50,9 +57,6 @@ class Remote {
       if (event == RawSocketEvent.read) {
         var dg = _socket?.receive();
         if (dg != null) {
-          if(_isServer){
-            clientAddress = dg.address;
-          }
           var text = String.fromCharCodes(dg.data);
           _parse(text);
         }
@@ -68,9 +72,6 @@ class Remote {
     }
     var address = remoteAddress;
     if (address == null) return;
-    if(_isServer && clientAddress != null){
-      address = clientAddress!;
-    }
     _socket?.send(utf8.encode(json), address, remotePort);
   }
 
@@ -84,46 +85,49 @@ class Remote {
   ///执行对方的动作
   void _doAction(PlayStateModel model){
     var action = model.action;
+
     switch (action){
       case 'url':
         // 设置播放地址
-        callback.setUrl(model.url);
+        _callback?.setUrl(model.url);
         break;
       case 'play':
         // 播放视频
-        callback.play();
+        _callback?.play();
         break;
       case 'pause':
         // 暂停视频
-        callback.pause();
+        _callback?.pause();
         break;
       case 'seek':
         // 进度跳转
-        callback.seek(model.position);
-        break;
-      case 'heartbeat':
-        // 心跳同步
-        remoteState = model;
+        _callback?.seek(model.position);
         break;
     }
   }
 
-  /// 接收到投屏的视频地址，发送给远端
-  void setUrl(String url){
-    if(remoteState?.url == url) return;
-    var model = PlayStateModel();
-    model.action = "url";
+  /// 加入房间或者创建房间
+  void join(String roomId) {
+    if (roomId.isEmpty) return;
+    var model = _remoteState;
+    model.action = "join";
+    model.roomId = roomId;
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
-    if(remoteState == null) {
-      remoteState = model;
-    }else{
-      remoteState?.url = url;
-    }
+  }
+
+  /// 接收到投屏的视频地址，发送给远端
+  void setUrl(String url){
+    if(_remoteState.url == url) return;
+    var model = _remoteState;
+    model.action = "url";
+    model.timestamp = DateTime.now().millisecondsSinceEpoch;
+    _remoteState.url = url;
+    _send(model);
   }
   ///播放视频
   void play(){
-    var model = PlayStateModel();
+    var model = _remoteState;
     model.action = "play";
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
@@ -131,7 +135,7 @@ class Remote {
 
   ///暂停视频
   void pause(){
-    var model = PlayStateModel();
+    var model = _remoteState;
     model.action = "pause";
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
@@ -139,7 +143,7 @@ class Remote {
 
   ///同步进度
   void seek(int position){
-    var model = PlayStateModel();
+    var model = _remoteState;
     model.action = "seek";
     model.position = position;
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -148,16 +152,17 @@ class Remote {
 
   ///和远程同步进度
   void syncRemote(){
-    if(remoteState == null) return;
-    var position = remoteState!.position + 1;
-    callback.seek(position);
+    var model = _remoteState;
+    model.action = "sync";
+    model.timestamp = DateTime.now().millisecondsSinceEpoch;
+    _send(model);
   }
 
   ///心跳
   void _heartbeat(){
-    var model = PlayStateModel();
+    var model = _remoteState;
     model.action = "heartbeat";
-    model.position = callback.getPosition();
+    model.position = _callback?.getPosition() ?? 0;
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }

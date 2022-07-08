@@ -10,7 +10,10 @@ import '../remote/remote.dart';
 
 
 class DesktopVideoPage extends StatefulWidget {
-  const DesktopVideoPage({Key? key, required this.title}) : super(key: key);
+
+  Remote remote;
+
+  DesktopVideoPage(this.remote,{Key? key, required this.title}) : super(key: key);
 
   final String title;
 
@@ -42,7 +45,9 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
   @override
   void initState() {
     super.initState();
-    remote = Remote(this,isServer: Platform.isWindows || Platform.isLinux);
+    remote = widget.remote;
+    remote.setCallback(this);
+    remote.join("527511");
     dlnaServer.start(this);
     if (mounted) {
       player.currentStream.listen((current) {

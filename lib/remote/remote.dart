@@ -77,6 +77,9 @@ class Remote {
 
   /// json 转对象
   void _parse(String text){
+    if (kDebugMode) {
+      print("remote receive : $text");
+    }
     PlayStateModel? model = JsonParse.jsonToModel(text);
     if (model != null){
       _doAction(model);

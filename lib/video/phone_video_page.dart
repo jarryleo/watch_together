@@ -27,7 +27,9 @@ class _PhoneVideoPageState extends State<PhoneVideoPage> implements PlayerAction
     super.initState();
     remote = widget.remote;
     remote.setCallback(this);
-    remote.join("527511");
+    Future.delayed(const Duration(seconds: 3),(){
+      remote.join("527511");
+    });
     dlnaServer.start(this);
   }
 

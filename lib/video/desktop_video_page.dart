@@ -44,7 +44,9 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
     super.initState();
     remote = widget.remote;
     remote.setCallback(this);
-    remote.join("527511");
+    Future.delayed(const Duration(seconds: 3),(){
+      remote.join("527511");
+    });
     dlnaServer.start(this);
     if (mounted) {
       player.currentStream.listen((current) {
@@ -97,9 +99,6 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.title),
-        ),
         body: Container(child: Platform.isWindows
             ? NativeVideo(
           player: player,

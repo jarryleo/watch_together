@@ -12,8 +12,8 @@ const String _UPNP_IP_V4 = '239.255.255.250';
 const int _UPNP_PORT = 1900;
 final InternetAddress _UPNP_AddressIPv4 = InternetAddress(_UPNP_IP_V4);
 
-/// 获取 随机 uuid
-var _uuid = "27d6877e-${Random().nextInt(8999) + 1000}-ea12-abdf-cf8d50e36d54";
+/// uuid
+const String _uuid = "27d6877e-9527-ea12-abdf-cf8d50e36d54";
 
 /// 删除字符串[from]尾部所有指定字符[pattern]
 String _removeTrailing(String pattern, String from) {
@@ -532,7 +532,7 @@ class _XmlReplay {
         <modelDescription>flutter dlna fork from dlna-dart</modelDescription>
         <modelName>flutter dlna</modelName>
         <modelURL>https://github.com/suconghou/dlna-dart</modelURL>
-        <UPC>000000000013</UPC>
+        <UPC>000000000011</UPC>
         <UDN>uuid:$_uuid</UDN>
         <dlna:x_dlnadoc xmlns:dlna="urn:schemas-dlna-org:device-1-0">
              DMR-1.50
@@ -1378,11 +1378,9 @@ class _Handler {
   void doPost(HttpRequest request) async {
     var path = request.uri.path;
     var response = request.response;
-    ContentType? contentType = request.headers.contentType;
     if (kDebugMode) {
       print(path);
     }
-    //if (contentType?.mimeType != 'text/xml') return;
     String body;
     _ServerXmlParser? xmlParser;
     DlnaEvent? action;

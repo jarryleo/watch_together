@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../dlna/dlna_flutter.dart';
@@ -24,11 +25,7 @@ class DesktopVideoPage extends StatefulWidget {
 class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAction {
   DlnaServer dlnaServer = DlnaServer();
   late Remote remote;
-  Player player = Player(
-    id: 0,
-    videoDimensions: const VideoDimensions(640, 360),
-    registerTexture: !Platform.isWindows,
-  );
+  Player player = Player(id:511,registerTexture: !Platform.isWindows);
   MediaType mediaType = MediaType.file;
   CurrentState current = CurrentState();
   PositionState position = PositionState();
@@ -77,7 +74,9 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
         },
       );
       player.errorStream.listen((event) {
-        print('libvlc error.');
+        if (kDebugMode) {
+          print('libvlc error.');
+        }
       });
       //devices = Devices.all;
       Equalizer equalizer = Equalizer.createMode(EqualizerMode.live);
@@ -104,19 +103,13 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
         body: Container(child: Platform.isWindows
             ? NativeVideo(
           player: player,
-          width: 640,
-          height: 360,
           volumeThumbColor: Colors.blue,
           volumeActiveColor: Colors.blue,
-          showControls: true,
         )
             : Video(
           player: player,
-          width: 640,
-          height: 360,
           volumeThumbColor: Colors.blue,
           volumeActiveColor: Colors.blue,
-          showControls: true,
         )));
   }
 

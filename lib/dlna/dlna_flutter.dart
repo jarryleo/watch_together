@@ -1143,7 +1143,7 @@ class DlnaServer {
     //启动dlna 服务
     var serverListen = _ServerListen(xmlReplay);
     _serverMap[ip] = serverListen;
-    serverListen.start(ip, port);
+    serverListen.start(ip, port,reusePort: Platform.isIOS);
   }
 
   ///停止接收投屏
@@ -1529,6 +1529,8 @@ class _Handler {
 
 /// 客户端和服务端交互事件
 abstract class PlayerAction {
+
+  ///接收客户端投屏过来的播放地址
   void setUrl(String url);
 
   ///客服端发来 播放指令

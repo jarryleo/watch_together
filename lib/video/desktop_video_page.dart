@@ -8,24 +8,24 @@ import 'package:flutter/material.dart';
 import '../dlna/dlna_flutter.dart';
 import '../remote/remote.dart';
 
-
-
 class DesktopVideoPage extends StatefulWidget {
-
   Remote remote;
 
-  DesktopVideoPage(this.remote,{Key? key, required this.title}) : super(key: key);
-
-  final String title;
+  DesktopVideoPage(this.remote, {Key? key}) : super(key: key);
 
   @override
   State<DesktopVideoPage> createState() => _DesktopVideoPageState();
 }
 
-class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAction {
+class _DesktopVideoPageState extends State<DesktopVideoPage>
+    implements PlayerAction {
   DlnaServer dlnaServer = DlnaServer();
   late Remote remote;
-  Player player = Player(id:511,registerTexture: !Platform.isWindows);
+
+  //当前播放的url
+  var currentUrl = "";
+
+  Player player = Player(id: 511, registerTexture: !Platform.isWindows);
   MediaType mediaType = MediaType.file;
   CurrentState current = CurrentState();
   PositionState position = PositionState();
@@ -33,6 +33,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
   GeneralState general = GeneralState();
   VideoDimensions videoDimensions = const VideoDimensions(0, 0);
   List<Media> medias = <Media>[];
+
   //List<Device> devices = <Device>[];
   TextEditingController controller = TextEditingController();
   TextEditingController metasController = TextEditingController();
@@ -43,10 +44,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
   void initState() {
     super.initState();
     remote = widget.remote;
-    remote.setCallback(this);
-    Future.delayed(const Duration(seconds: 3),(){
-      remote.join("527511");
-    });
+    remote.setActionCallback(this);
     dlnaServer.start(this);
     if (mounted) {
       player.currentStream.listen((current) {
@@ -54,13 +52,13 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
       });
       player.positionStream.listen((position) {
         setState(() => this.position = position);
-        remote.seek(position.position?.inSeconds??0);
+        remote.seek(position.position?.inSeconds ?? 0);
       });
       player.playbackStream.listen((playback) {
         setState(() => this.playback = playback);
-        if(playback.isPlaying){
+        if (playback.isPlaying) {
           remote.play();
-        }else{
+        } else {
           remote.pause();
         }
       });
@@ -71,7 +69,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
         setState(() => this.videoDimensions = videoDimensions);
       });
       player.bufferingProgressStream.listen(
-            (bufferingProgress) {
+        (bufferingProgress) {
           setState(() => this.bufferingProgress = bufferingProgress);
         },
       );
@@ -99,27 +97,37 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Container(child: Platform.isWindows
-            ? NativeVideo(
-          player: player,
-          volumeThumbColor: Colors.blue,
-          volumeActiveColor: Colors.blue,
-        )
-            : Video(
-          player: player,
-          volumeThumbColor: Colors.blue,
-          volumeActiveColor: Colors.blue,
-        )));
+      body: Container(
+          child: Platform.isWindows
+              ? NativeVideo(
+                  player: player,
+                  volumeThumbColor: Colors.blue,
+                  volumeActiveColor: Colors.blue,
+                )
+              : Video(
+                  player: player,
+                  volumeThumbColor: Colors.blue,
+                  volumeActiveColor: Colors.blue,
+                )),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _sync,
+        child: const Icon(Icons.sync),
+      ),
+    );
+  }
+
+  void _sync() {
+    remote.syncRemote();
   }
 
   @override
   int getPosition() {
-    return player.position.position?.inSeconds??0;
+    return player.position.position?.inSeconds ?? 0;
   }
 
   @override
   int getDuration() {
-    return player.position.duration?.inSeconds??0;
+    return player.position.duration?.inSeconds ?? 0;
   }
 
   @override
@@ -144,13 +152,15 @@ class _DesktopVideoPageState extends State<DesktopVideoPage> implements PlayerAc
 
   @override
   void setUrl(String url) {
-    var media  = Media.network(url);
+    if (url == currentUrl) return;
+    var media = Media.network(url);
     player.open(media);
     remote.setUrl(url);
   }
 
   @override
   void stop() {
+    currentUrl = "";
     player.stop();
   }
 }

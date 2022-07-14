@@ -23,13 +23,34 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
   //当前播放的url
   var currentUrl = "";
 
+  //播放状态
+  Duration _duration = const Duration();
+  bool _playing = false;
+
   @override
   void initState() {
     super.initState();
+    player.addListener(_playerValueChanged);
     remote = widget.remote;
     remote.setActionCallback(this);
     dlnaServer.start(this);
     remote.syncRemote();
+  }
+
+  //播放器状态监听(同步房间其他人)
+  void _playerValueChanged() {
+    //缺少进度同步 todo
+    FijkValue value = player.value;
+    bool playing = (value.state == FijkState.started);
+    if (playing != _playing) {
+      //播放暂停控制
+      if (playing) {
+        remote.play();
+      } else {
+        remote.pause();
+      }
+      _playing = playing;
+    }
   }
 
   @override

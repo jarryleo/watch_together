@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:oktoast/oktoast.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/remote/model.dart';
 
@@ -61,6 +62,7 @@ class Remote {
   /// 接收对面数据
   void _listen() async {
     _socket.listen(_onData, onDone: _onDone, onError: _onError);
+    showToast("连接服务器成功");
   }
 
   ///接收到服务器数据
@@ -74,6 +76,7 @@ class Remote {
     if (kDebugMode) {
       print("onDone");
     }
+    showToast("连接已断开");
   }
 
   ///连接出错
@@ -81,6 +84,7 @@ class Remote {
     if (kDebugMode) {
       print(err);
     }
+    showToast("连接出错");
   }
 
   ///发送当前状态

@@ -9,7 +9,9 @@ import 'package:watch_together/remote/model.dart';
 typedef VoidCallback = void Function();
 
 /// 同步服务端地址
-const host = "bigplans.work";
+// const host = "192.168.2.1";
+// const host = "47.99.190.206"; //big
+const host = "112.74.55.142"; //我的阿里云
 const int remotePort = 51127; //服务器端口
 
 ///跟服务端交互，获取 播放状态
@@ -23,10 +25,10 @@ class Remote {
   ///远程状态
   PlayStateModel _remoteState = PlayStateModel();
 
-  RawDatagramSocket? _socket;
-
   ///远端地址
-  InternetAddress? remoteAddress;
+  InternetAddress remoteAddress = InternetAddress(host);
+
+  static late Socket _socket;
 
   get roomId => _remoteState.roomId;
 
@@ -39,19 +41,11 @@ class Remote {
 
   ///开启服务
   void _start() async {
-    InternetAddress.lookup(host).then((list) {
-      if (kDebugMode) {
-        print(list);
-      }
-      //解析服务器域名获取ip地址
-      remoteAddress = list.first;
-      if (remoteAddress == null) return;
-      RawDatagramSocket.bind(InternetAddress.anyIPv4, remotePort)
-          .then((socket) {
-        _socket = socket;
-        _listen();
-      });
-    });
+    Socket.connect(host, remotePort, timeout: const Duration(seconds: 10))
+        .then((socket) {
+      _socket = socket;
+      _listen();
+    }).catchError(_onError);
   }
 
   ///设置播放回调
@@ -66,18 +60,27 @@ class Remote {
 
   /// 接收对面数据
   void _listen() async {
-    _socket?.listen((event) {
-      if (event == RawSocketEvent.read) {
-        var dg = _socket?.receive();
-        if (dg != null) {
-          if (dg.address.host != remoteAddress?.host) {
-            return;
-          }
-          var text = String.fromCharCodes(dg.data);
-          _parse(text);
-        }
-      }
-    });
+    _socket.listen(_onData, onDone: _onDone, onError: _onError);
+  }
+
+  ///接收到服务器数据
+  void _onData(data) {
+    var text = String.fromCharCodes(data);
+    _parse(text);
+  }
+
+  ///服务器连接断开
+  void _onDone() {
+    if (kDebugMode) {
+      print("onDone");
+    }
+  }
+
+  ///连接出错
+  void _onError(err) {
+    if (kDebugMode) {
+      print(err);
+    }
   }
 
   ///发送当前状态
@@ -86,9 +89,7 @@ class Remote {
     if (kDebugMode) {
       print("send : $json");
     }
-    var address = remoteAddress;
-    if (address == null) return;
-    _socket?.send(utf8.encode(json), address, remotePort);
+    _socket.write(json);
   }
 
   /// json 转对象
@@ -96,10 +97,8 @@ class Remote {
     if (kDebugMode) {
       print("remote receive : $text");
     }
-    PlayStateModel? model = JsonParse.jsonToModel(text);
-    if (model != null) {
-      _doAction(model);
-    }
+    PlayStateModel model = JsonParse.jsonToModel(text);
+    _doAction(model);
   }
 
   ///执行对方的动作
@@ -157,6 +156,7 @@ class Remote {
   ///加入房间成功
   void _onJoinRoom() {
     _remoteCallback?.call();
+
     ///开启心跳保持连接活动
     Timer.periodic(const Duration(seconds: 5), (timer) {
       _heartbeat();
@@ -255,6 +255,6 @@ class Remote {
 
   ///关闭端口，释放资源
   void dispose() {
-    _socket?.close();
+    _socket.close();
   }
 }

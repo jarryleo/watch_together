@@ -103,6 +103,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
   @override
   void dispose() {
     super.dispose();
+    player.stop();
     player.dispose();
     dlnaServer.stop();
     remote.exit();

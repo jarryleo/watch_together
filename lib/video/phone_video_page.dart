@@ -67,6 +67,8 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
   @override
   void dispose() {
     super.dispose();
+    player.stop();
+    player.release();
     player.dispose();
     dlnaServer.stop();
     remote.exit();

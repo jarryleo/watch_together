@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -33,6 +32,7 @@ class Remote {
 
   ///获取房间id
   get roomId => _remoteState.roomId;
+
   ///是否是房主
   get isRoomOwner => _remoteState.isOwner;
 
@@ -69,7 +69,7 @@ class Remote {
   void _listen() async {
     _socket?.listen(_onData, onDone: _onDone, onError: _onError);
     showToast("连接服务器成功");
-    if(roomId.isNotEmpty){
+    if (roomId.isNotEmpty) {
       join(roomId);
     }
   }
@@ -91,7 +91,7 @@ class Remote {
     _heartBeatTimer = null;
     //自动重连
     showToast("连接已断开,2秒后自动重连");
-    Future.delayed(const Duration(seconds: 2),(){
+    Future.delayed(const Duration(seconds: 2), () {
       _start();
     });
   }
@@ -113,9 +113,9 @@ class Remote {
     if (kDebugMode) {
       print("send : $json");
     }
-    if(_socket == null){
+    if (_socket == null) {
       showToast("连接服务器失败，请重启app再试");
-    }else{
+    } else {
       _socket?.writeln(json);
     }
   }
@@ -180,6 +180,7 @@ class Remote {
     }
     _remoteCallback?.call();
     _remoteCallback = null;
+
     ///开启心跳同步播放状态
     _heartBeatTimer?.cancel();
     _heartBeatTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
@@ -189,14 +190,16 @@ class Remote {
 
   ///加入房间成功
   void _onJoinRoom() {
-    if(_remoteCallback == null){
+    if (_remoteCallback == null) {
       syncRemote();
     }
     _remoteCallback?.call();
     _remoteCallback = null;
+
     ///开启心跳保持连接活动
     _heartBeatTimer?.cancel();
-    _heartBeatTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _heartBeatTimer =
+        Timer.periodic(Duration(seconds: isRoomOwner ? 3 : 5), (timer) {
       _heartbeat();
     });
   }
@@ -208,7 +211,8 @@ class Remote {
       return;
     }
     _callback?.setUrl(url);
-    var diff = (DateTime.now().millisecondsSinceEpoch - _remoteState.timestamp).abs();
+    var diff =
+        (DateTime.now().millisecondsSinceEpoch - _remoteState.timestamp).abs();
     int diffSecond = diff ~/ 1000;
     //修正误差
     if (diffSecond < 0) {
@@ -237,7 +241,7 @@ class Remote {
   }
 
   ///退出房间
-  void exit(){
+  void exit() {
     if (roomId.isEmpty) return;
     _heartBeatTimer?.cancel();
     var model = _remoteState.copyWith(action: "exit");
@@ -297,7 +301,7 @@ class Remote {
 
   ///心跳
   void _heartbeat() async {
-    var model = _remoteState.copyWith(url: "");//心跳省略url，减少带宽消耗
+    var model = _remoteState.copyWith(url: ""); //心跳省略url，减少带宽消耗
     model.action = "heartbeat";
     model.position = _callback?.getPosition() ?? 0;
     model.timestamp = DateTime.now().millisecondsSinceEpoch;

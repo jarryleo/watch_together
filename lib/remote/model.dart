@@ -8,7 +8,7 @@ class PlayStateModel {
   // url,play,pause,seek, 播放器指令
   // [heartbeat 只有房主心跳同步播放状态,join 加入房间或者创建,sync 请求同步房主进度],
   // {idle 新房间,wait 等待房主开播}
-  // exit 退出房间/放假爱你解散
+  // exit 退出房间/解散房间
   String action = "join";
   String url = ""; //播放地址
   String roomId = ""; //房间id 6位int值

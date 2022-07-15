@@ -11,7 +11,7 @@ typedef VoidCallback = void Function();
 
 /// 同步服务端地址
 // const host = "47.99.190.206"; //big
-const host = "112.74.55.142"; //我的阿里云
+const host = "112.74.55.142"; //阿里云
 // const host = "192.168.2.1";
 const int remotePort = 51127; //服务器端口
 
@@ -69,7 +69,7 @@ class Remote {
   void _listen() async {
     _socket?.listen(_onData, onDone: _onDone, onError: _onError);
     showToast("连接服务器成功");
-    if(roomId.isNotEmpty && !_remoteState.isOwner){
+    if(roomId.isNotEmpty){
       join(roomId);
     }
   }
@@ -85,18 +85,15 @@ class Remote {
     if (kDebugMode) {
       print("onDone");
     }
+    _socket?.close();
     _socket = null;
     _heartBeatTimer?.cancel();
     _heartBeatTimer = null;
-    //如果是ios且不是房主，自动重连
-    if(Platform.isIOS && !_remoteState.isOwner){
-      showToast("连接已断开,2秒后自动重连");
-      Future.delayed(const Duration(seconds: 2),(){
-        _start();
-      });
-    }else{
-      showToast("连接已断开");
-    }
+    //自动重连
+    showToast("连接已断开,2秒后自动重连");
+    Future.delayed(const Duration(seconds: 2),(){
+      _start();
+    });
   }
 
   ///连接出错
@@ -168,6 +165,11 @@ class Remote {
         // 进度跳转
         _onSync();
         break;
+      case 'exit':
+        // 房间已解散
+        showToast("房间已解散");
+        _heartBeatTimer?.cancel();
+        break;
     }
   }
 
@@ -229,6 +231,16 @@ class Remote {
     if (roomId.isEmpty) return;
     var model = _remoteState;
     model.action = "join";
+    model.roomId = roomId;
+    model.timestamp = DateTime.now().millisecondsSinceEpoch;
+    _send(model);
+  }
+
+  ///退出房间
+  void exit(){
+    if (roomId.isEmpty) return;
+    _heartBeatTimer?.cancel();
+    var model = _remoteState.copyWith(action: "exit");
     model.roomId = roomId;
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);

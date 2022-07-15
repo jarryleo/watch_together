@@ -32,17 +32,17 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
     super.initState();
     remote = widget.remote;
     remote.setActionCallback(this);
-    if(remote.isRoomOwner) {
+    if (remote.isRoomOwner) {
       //房主才能开启投屏
       dlnaServer.start(this);
-    }else{
+    } else {
       //观众同步房主信息
       remote.syncRemote();
     }
     player.addListener(_playerValueChanged);
     player.onCurrentPosUpdate.listen((pos) {
       //如果本地进度和播放器进度误差超过5s，则同步进度
-      if((pos.inSeconds - _currentPos.inSeconds).abs() >=5){
+      if ((pos.inSeconds - _currentPos.inSeconds).abs() >= 5) {
         remote.seek(pos.inSeconds);
       }
       _currentPos = pos;
@@ -69,14 +69,15 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
     super.dispose();
     player.dispose();
     dlnaServer.stop();
-    remote.dispose();
+    remote.exit();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("房间号：${remote.roomId}"),
+        title:
+            Text("房间号：${remote.roomId}(${remote.isRoomOwner ? "房主" : "观众"})"),
       ),
       body: Column(
         children: [
@@ -145,6 +146,5 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
     currentUrl = "";
     player.stop();
     player.reset();
-    remote.dispose();
   }
 }

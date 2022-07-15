@@ -105,12 +105,16 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
     super.dispose();
     player.dispose();
     dlnaServer.stop();
-    remote.dispose();
+    remote.exit();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title:
+        Text("房间号：${remote.roomId}(${remote.isRoomOwner ? "房主" : "观众"})"),
+      ),
       body: Container(
           child: Platform.isWindows
               ? NativeVideo(

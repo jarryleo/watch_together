@@ -4,8 +4,12 @@ import 'package:flutter/foundation.dart';
 
 /// 传递json对象实体
 class PlayStateModel {
-  String action =
-      "join"; //执行动作 url,play,pause,seek,heartbeat,join,sync,idle,wait
+  //执行动作 [] 客户端发送专属信息 {} 服务端发送专属信息 ，其它为播放器通用信息
+  // url,play,pause,seek, 播放器指令
+  // [heartbeat 只有房主心跳同步播放状态,join 加入房间或者创建,sync 请求同步房主进度],
+  // {idle 新房间,wait 等待房主开播}
+  // exit 退出房间/放假爱你解散
+  String action = "join";
   String url = ""; //播放地址
   String roomId = ""; //房间id 6位int值
   bool isPlaying = false; // 是否正在播放

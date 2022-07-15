@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:oktoast/oktoast.dart';
 import 'package:watch_together/remote/remote.dart';
 import 'package:watch_together/video/desktop_video_page.dart';
 import 'package:watch_together/video/phone_video_page.dart';
@@ -17,7 +16,6 @@ class JoinPage extends StatefulWidget {
 }
 
 class _JoinPageState extends State<JoinPage> {
-
   bool _isLoading = false;
   String? errText;
   String roomId = "";
@@ -56,7 +54,7 @@ class _JoinPageState extends State<JoinPage> {
                   maxLength: 6,
                   onChanged: (text) {
                     roomId = text;
-                    setState((){
+                    setState(() {
                       errText = null;
                     });
                   },
@@ -79,7 +77,7 @@ class _JoinPageState extends State<JoinPage> {
     var tips = "请输入6位数字的房间号";
     if (roomId.length != 6) {
       //showToast(tips);
-      setState((){
+      setState(() {
         errText = tips;
       });
       return;
@@ -89,12 +87,14 @@ class _JoinPageState extends State<JoinPage> {
     });
     widget.remote.setRemoteCallback(() {
       _jump();
+      setState(() {
+        _isLoading = false;
+      });
     });
     widget.remote.join(roomId);
   }
 
   void _jump() {
-    Navigator.pop(context);
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return Platform.isAndroid || Platform.isIOS
           ? PhoneVideoPage(widget.remote)
@@ -102,5 +102,11 @@ class _JoinPageState extends State<JoinPage> {
               ? DesktopVideoPage(widget.remote)
               : const Center(child: Text("该设备不支持！"));
     }));
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    widget.remote.dispose();
   }
 }

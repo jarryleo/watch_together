@@ -107,6 +107,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
     player.dispose();
     dlnaServer.stop();
     remote.exit();
+    remote.dispose();
   }
 
   @override
@@ -114,23 +115,27 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
     return Scaffold(
       appBar: AppBar(
         title:
-        Text("房间号：${remote.roomId}(${remote.isRoomOwner ? "房主" : "观众"})"),
+            Text("房间号：${remote.roomId}(${remote.isRoomOwner ? "房主" : "观众"})"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'sync',
+            onPressed: _sync,
+          ),
+        ],
       ),
       body: Container(
-          child: Platform.isWindows
-              ? NativeVideo(
-                  player: player,
-                  volumeThumbColor: Colors.blue,
-                  volumeActiveColor: Colors.blue,
-                )
-              : Video(
-                  player: player,
-                  volumeThumbColor: Colors.blue,
-                  volumeActiveColor: Colors.blue,
-                )),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _sync,
-        child: const Icon(Icons.sync),
+        child: Platform.isWindows
+            ? NativeVideo(
+                player: player,
+                volumeThumbColor: Colors.blue,
+                volumeActiveColor: Colors.blue,
+              )
+            : Video(
+                player: player,
+                volumeThumbColor: Colors.blue,
+                volumeActiveColor: Colors.blue,
+              ),
       ),
     );
   }

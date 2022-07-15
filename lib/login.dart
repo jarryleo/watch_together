@@ -95,6 +95,9 @@ class _JoinPageState extends State<JoinPage> {
   }
 
   void _jump() {
+    if(Platform.isWindows){
+      Navigator.pop(context);
+    }
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return Platform.isAndroid || Platform.isIOS
           ? PhoneVideoPage(widget.remote)
@@ -107,6 +110,8 @@ class _JoinPageState extends State<JoinPage> {
   @override
   void dispose() {
     super.dispose();
-    widget.remote.dispose();
+    if(!Platform.isWindows) {
+      widget.remote.dispose();
+    }
   }
 }

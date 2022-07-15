@@ -4,22 +4,23 @@ import 'package:flutter/foundation.dart';
 
 /// 传递json对象实体
 class PlayStateModel {
-  String action = "join"; //执行动作 url,play,pause,seek,heartbeat,join,sync,idle,wait
+  String action =
+      "join"; //执行动作 url,play,pause,seek,heartbeat,join,sync,idle,wait
   String url = ""; //播放地址
-  String roomId = "000000"; //房间id 6位int值
+  String roomId = ""; //房间id 6位int值
   bool isPlaying = false; // 是否正在播放
   bool isOwner = false; // 是否是房主
   int position = 0; //播放进度 单位 秒
   int timestamp = 0; //时间戳 单位 毫秒
 
-  PlayStateModel({
-    this.action = "join",
-    this.isPlaying = false,
-    this.isOwner = false,
-    this.position = 0,
-    this.roomId = "000000",
-    this.timestamp = 0,
-    this.url = ""});
+  PlayStateModel(
+      {this.action = "join",
+      this.isPlaying = false,
+      this.isOwner = false,
+      this.position = 0,
+      this.roomId = "",
+      this.timestamp = 0,
+      this.url = ""});
 
   factory PlayStateModel.fromJson(Map<String, dynamic> json) {
     return PlayStateModel(
@@ -44,6 +45,26 @@ class PlayStateModel {
     data['url'] = url;
     return data;
   }
+
+  ///拷贝
+  PlayStateModel copyWith({
+    String? action,
+    bool? isPlaying,
+    bool? isOwner,
+    int? position,
+    String? roomId,
+    int? timestamp,
+    String? url,
+  }) =>
+      PlayStateModel(
+        action: action ?? this.action,
+        isPlaying: isPlaying ?? this.isPlaying,
+        isOwner: isOwner ?? this.isOwner,
+        position: position ?? this.position,
+        roomId: roomId ?? this.roomId,
+        timestamp: timestamp ?? this.timestamp,
+        url: url ?? this.url,
+      );
 }
 
 /// json 和对象互转工具类

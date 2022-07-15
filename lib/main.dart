@@ -35,15 +35,4 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home:JoinPage(remote));
-
-  /*MaterialApp app() => MaterialApp(
-      title: title,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: Platform.isAndroid || Platform.isIOS
-          ? PhoneVideoPage(remote, title: title)
-          : Platform.isWindows || Platform.isLinux
-              ? DesktopVideoPage(remote, title: title)
-              : const Center(child: Text("该设备不支持！")));*/
 }

@@ -25,6 +25,10 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
   //当前播放的url
   var currentUrl = "";
 
+  //播放状态
+  bool _playing = false;
+  Duration _currentPos = const Duration();
+
   Player player = Player(id: 511, registerTexture: !Platform.isWindows);
   MediaType mediaType = MediaType.file;
   CurrentState current = CurrentState();
@@ -52,15 +56,25 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
       });
       player.positionStream.listen((position) {
         setState(() => this.position = position);
-        remote.seek(position.position?.inSeconds ?? 0);
+        var pos = position.position;
+        if (pos != null) {
+          //如果本地进度和播放器进度误差超过5s，则同步进度
+          if ((pos.inSeconds - _currentPos.inSeconds).abs() >= 5) {
+            remote.seek(pos.inSeconds);
+          }
+          _currentPos = pos;
+        }
       });
       player.playbackStream.listen((playback) {
         setState(() => this.playback = playback);
-        if (playback.isPlaying) {
-          remote.play();
-        } else {
-          remote.pause();
+        if (_playing != playback.isPlaying) {
+          if (playback.isPlaying) {
+            remote.play();
+          } else {
+            remote.pause();
+          }
         }
+        _playing = playback.isPlaying;
       });
       player.generalStream.listen((general) {
         setState(() => this.general = general);

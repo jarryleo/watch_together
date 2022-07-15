@@ -10,9 +10,9 @@ import 'package:watch_together/remote/model.dart';
 typedef VoidCallback = void Function();
 
 /// 同步服务端地址
-// const host = "192.168.2.1";
 // const host = "47.99.190.206"; //big
 const host = "112.74.55.142"; //我的阿里云
+// const host = "192.168.2.1";
 const int remotePort = 51127; //服务器端口
 
 ///跟服务端交互，获取 播放状态
@@ -29,9 +29,15 @@ class Remote {
   ///远端地址
   InternetAddress remoteAddress = InternetAddress(host);
 
-  static late Socket _socket;
+  static Socket? _socket;
 
+  ///获取房间id
   get roomId => _remoteState.roomId;
+  ///是否是房主
+  get isRoomOwner => _remoteState.isOwner;
+
+  //心跳计时器
+  Timer? _heartBeatTimer;
 
   ///构造函数异步初始化udp
   Remote() {
@@ -61,8 +67,11 @@ class Remote {
 
   /// 接收对面数据
   void _listen() async {
-    _socket.listen(_onData, onDone: _onDone, onError: _onError);
+    _socket?.listen(_onData, onDone: _onDone, onError: _onError);
     showToast("连接服务器成功");
+    if(roomId.isNotEmpty && !_remoteState.isOwner){
+      join(roomId);
+    }
   }
 
   ///接收到服务器数据
@@ -76,7 +85,18 @@ class Remote {
     if (kDebugMode) {
       print("onDone");
     }
-    showToast("连接已断开");
+    _socket = null;
+    _heartBeatTimer?.cancel();
+    _heartBeatTimer = null;
+    //如果是ios且不是房主，自动重连
+    if(Platform.isIOS && !_remoteState.isOwner){
+      showToast("连接已断开,2秒后自动重连");
+      Future.delayed(const Duration(seconds: 2),(){
+        _start();
+      });
+    }else{
+      showToast("连接已断开");
+    }
   }
 
   ///连接出错
@@ -84,6 +104,9 @@ class Remote {
     if (kDebugMode) {
       print(err);
     }
+    _socket = null;
+    _heartBeatTimer?.cancel();
+    _heartBeatTimer = null;
     showToast("连接出错");
   }
 
@@ -93,7 +116,11 @@ class Remote {
     if (kDebugMode) {
       print("send : $json");
     }
-    _socket.write(json);
+    if(_socket == null){
+      showToast("连接服务器失败，请重启app再试");
+    }else{
+      _socket?.writeln(json);
+    }
   }
 
   /// json 转对象
@@ -149,20 +176,25 @@ class Remote {
     if (kDebugMode) {
       print("心跳开启");
     }
-
+    _remoteCallback?.call();
+    _remoteCallback = null;
     ///开启心跳同步播放状态
-    Timer.periodic(const Duration(seconds: 3), (timer) {
+    _heartBeatTimer?.cancel();
+    _heartBeatTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       _heartbeat();
     });
-    _remoteCallback?.call();
   }
 
   ///加入房间成功
   void _onJoinRoom() {
+    if(_remoteCallback == null){
+      syncRemote();
+    }
     _remoteCallback?.call();
-
+    _remoteCallback = null;
     ///开启心跳保持连接活动
-    Timer.periodic(const Duration(seconds: 5), (timer) {
+    _heartBeatTimer?.cancel();
+    _heartBeatTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _heartbeat();
     });
   }
@@ -174,16 +206,16 @@ class Remote {
       return;
     }
     _callback?.setUrl(url);
-    var diff = DateTime.now().millisecondsSinceEpoch - _remoteState.timestamp;
+    var diff = (DateTime.now().millisecondsSinceEpoch - _remoteState.timestamp).abs();
     int diffSecond = diff ~/ 1000;
     //修正误差
     if (diffSecond < 0) {
       diffSecond = 0;
     }
     if (diffSecond > 10) {
-      diffSecond = 1;
+      diffSecond = 0;
     }
-    var position = _remoteState.position + diffSecond;
+    var position = _remoteState.position + diffSecond + 2;
     _callback?.seek(position);
     if (_remoteState.isPlaying) {
       _callback?.play();
@@ -204,7 +236,7 @@ class Remote {
 
   /// 接收到投屏的视频地址，发送给远端
   void setUrl(String url) {
-    if (!_remoteState.isOwner) return;
+    if (!isRoomOwner) return;
     var model = _remoteState;
     model.action = "url";
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -214,6 +246,7 @@ class Remote {
 
   ///播放视频
   void play() {
+    if (!isRoomOwner) return;
     var model = _remoteState;
     model.action = "play";
     model.isPlaying = true;
@@ -223,6 +256,7 @@ class Remote {
 
   ///暂停视频
   void pause() {
+    if (!isRoomOwner) return;
     var model = _remoteState;
     model.action = "pause";
     model.isPlaying = false;
@@ -232,6 +266,7 @@ class Remote {
 
   ///同步进度
   void seek(int position) {
+    if (!isRoomOwner) return;
     var model = _remoteState;
     model.action = "seek";
     model.position = position;
@@ -250,7 +285,7 @@ class Remote {
 
   ///心跳
   void _heartbeat() async {
-    var model = _remoteState;
+    var model = _remoteState.copyWith(url: "");//心跳省略url，减少带宽消耗
     model.action = "heartbeat";
     model.position = _callback?.getPosition() ?? 0;
     model.timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -259,6 +294,7 @@ class Remote {
 
   ///关闭端口，释放资源
   void dispose() {
-    _socket.close();
+    _socket?.close();
+    _socket = null;
   }
 }

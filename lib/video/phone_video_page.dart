@@ -6,9 +6,9 @@ import 'package:watch_together/remote/remote.dart';
 import '../dlna/dlna_flutter.dart';
 
 class PhoneVideoPage extends StatefulWidget {
-  Remote remote;
+  final Remote remote;
 
-  PhoneVideoPage(this.remote, {Key? key}) : super(key: key);
+  const PhoneVideoPage(this.remote, {Key? key}) : super(key: key);
 
   @override
   State<PhoneVideoPage> createState() => _PhoneVideoPageState();
@@ -24,22 +24,33 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
   var currentUrl = "";
 
   //播放状态
-  Duration _duration = const Duration();
   bool _playing = false;
+  Duration _currentPos = const Duration();
 
   @override
   void initState() {
     super.initState();
-    player.addListener(_playerValueChanged);
     remote = widget.remote;
     remote.setActionCallback(this);
-    dlnaServer.start(this);
-    remote.syncRemote();
+    if(remote.isRoomOwner) {
+      //房主才能开启投屏
+      dlnaServer.start(this);
+    }else{
+      //观众同步房主信息
+      remote.syncRemote();
+    }
+    player.addListener(_playerValueChanged);
+    player.onCurrentPosUpdate.listen((pos) {
+      //如果本地进度和播放器进度误差超过5s，则同步进度
+      if((pos.inSeconds - _currentPos.inSeconds).abs() >=5){
+        remote.seek(pos.inSeconds);
+      }
+      _currentPos = pos;
+    });
   }
 
   //播放器状态监听(同步房间其他人)
   void _playerValueChanged() {
-    //缺少进度同步 todo
     FijkValue value = player.value;
     bool playing = (value.state == FijkState.started);
     if (playing != _playing) {

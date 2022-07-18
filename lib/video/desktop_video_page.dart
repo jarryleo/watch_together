@@ -101,6 +101,9 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
       equalizer.setBandAmp(31.25, 10.0);
       player.setEqualizer(equalizer);
     }
+    if(!remote.isRoomOwner) {
+      _sync();
+    }
   }
 
   @override

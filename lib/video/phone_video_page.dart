@@ -1,6 +1,7 @@
 import 'package:fijkplayer/fijkplayer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/remote/remote.dart';
 
 import '../dlna/dlna_flutter.dart';
@@ -37,7 +38,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
       dlnaServer.start(this);
     } else {
       //观众同步房主信息
-      remote.syncRemote();
+      _sync();
     }
     player.addListener(_playerValueChanged);
     player.onCurrentPosUpdate.listen((pos) {
@@ -57,10 +58,15 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
       //播放暂停控制
       if (playing) {
         remote.play();
+        Wakelock.enable();
       } else {
         remote.pause();
+        Wakelock.disable();
       }
       _playing = playing;
+    }
+    if(value.state == FijkState.prepared){
+      _sync();
     }
   }
 

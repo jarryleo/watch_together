@@ -221,10 +221,6 @@ class Remote {
   void _onJoinRoom() {
     _remoteCallback?.call(true);
     _remoteCallback = null;
-    //延迟500ms后同步视频
-    Future.delayed(const Duration(milliseconds: 500),(){
-      syncRemote();
-    });
     //开启心跳保持连接活动
     _heartBeatTimer?.cancel();
     _heartBeatTimer =

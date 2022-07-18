@@ -4,6 +4,7 @@ import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:wakelock/wakelock.dart';
 
 import '../dlna/dlna_flutter.dart';
 import '../remote/remote.dart';
@@ -70,8 +71,10 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
         if (_playing != playback.isPlaying) {
           if (playback.isPlaying) {
             remote.play();
+            Wakelock.enable();
           } else {
             remote.pause();
+            Wakelock.disable();
           }
         }
         _playing = playback.isPlaying;

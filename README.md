@@ -27,12 +27,14 @@ flutter 编写，支持多平台；
 项目开源，不上架应用市场，安卓用户和windows 用户可以点击下面链接体验；
 
 安卓安装包下载：
-[Download Android apk](https://github.com/jarryleo/watch_together/releases/download/1.0.1/watch_together_1.0.1.apk)
+[Download Android watch_together_1.0.1.apk](https://github.com/jarryleo/watch_together/releases/download/1.0.1/watch_together_1.0.1.apk)    
 
-windows安装包待上传；
+windows 安装包下载：
+[Download Windows installer WatchTogether.zip](https://github.com/jarryleo/watch_together/releases/download/1.0.1/WatchTogther.zip)
+
 
 有自己服务器的开发者，自己部署服务端，修改客户端内的服务器ip即可；
 
-选择 tcp 分支；
+选择 tcp 分支：
 
 [https://github.com/jarryleo/WatchTogetherServer.git](https://github.com/jarryleo/WatchTogetherServer/tree/tcp)

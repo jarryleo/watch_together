@@ -82,7 +82,12 @@ class Remote {
   ///接收到服务器数据
   void _onData(data) {
     var text = String.fromCharCodes(data);
-    _parse(text);
+    //处理tcp沾包问题
+    text.split('\n').forEach((element) {
+      if (element.startsWith('{') && element.endsWith('}')) {
+        _parse(element);
+      }
+    });
   }
 
   ///服务器连接断开
@@ -214,13 +219,13 @@ class Remote {
 
   ///加入房间成功
   void _onJoinRoom() {
-    if (_remoteCallback == null) {
-      syncRemote();
-    }
     _remoteCallback?.call(true);
     _remoteCallback = null;
-
-    ///开启心跳保持连接活动
+    //延迟500ms后同步视频
+    Future.delayed(const Duration(milliseconds: 500),(){
+      syncRemote();
+    });
+    //开启心跳保持连接活动
     _heartBeatTimer?.cancel();
     _heartBeatTimer =
         Timer.periodic(Duration(seconds: isRoomOwner ? 3 : 5), (timer) {

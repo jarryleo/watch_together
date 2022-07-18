@@ -85,8 +85,10 @@ class _JoinPageState extends State<JoinPage> {
     setState(() {
       _isLoading = true;
     });
-    widget.remote.setRemoteCallback(() {
-      _jump();
+    widget.remote.setRemoteCallback((result) {
+      if (result) {
+        _jump();
+      }
       setState(() {
         _isLoading = false;
       });

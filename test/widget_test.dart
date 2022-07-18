@@ -84,7 +84,7 @@ void main() {
   });
 
   test("json", (){
-    var model = PlayStateModel();
+    var model = PlayStateModel(action: "");
     model.action = "play";
     model.position = 11;
     model.timestamp = DateTime.now().millisecondsSinceEpoch;

@@ -6,12 +6,14 @@ import 'package:oktoast/oktoast.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/remote/model.dart';
 
-typedef VoidCallback = void Function();
+import 'action.dart';
+
+typedef VoidCallback = void Function(bool);
 
 /// 同步服务端地址
 // const host = "47.99.190.206"; //big
-const host = "112.74.55.142"; //阿里云
-// const host = "192.168.2.1";
+// const host = "112.74.55.142"; //阿里云
+const host = "192.168.2.1";
 const int remotePort = 51127; //服务器端口
 
 ///跟服务端交互，获取 播放状态
@@ -23,7 +25,7 @@ class Remote {
   VoidCallback? _remoteCallback;
 
   ///远程状态
-  PlayStateModel _remoteState = PlayStateModel();
+  PlayStateModel _remoteState = PlayStateModel(action: "");
 
   ///远端地址
   InternetAddress remoteAddress = InternetAddress(host);
@@ -104,6 +106,7 @@ class Remote {
     _socket = null;
     _heartBeatTimer?.cancel();
     _heartBeatTimer = null;
+    _remoteCallback?.call(false);
     showToast("连接出错");
   }
 
@@ -114,7 +117,8 @@ class Remote {
       print("send : $json");
     }
     if (_socket == null) {
-      showToast("连接服务器失败，请重启app再试");
+      _remoteCallback?.call(false);
+      showToast("连接服务器失败,请过会儿重启app后再尝试");
     } else {
       _socket?.writeln(json);
     }
@@ -132,43 +136,45 @@ class Remote {
   ///执行对方的动作
   void _doAction(PlayStateModel model) {
     _remoteState = model;
-    var action = model.action;
+    Action action = model.actionEnum();
     switch (action) {
-      case 'idle':
+      case Action.idle:
         //创建房间成功
         _onCreateRoom();
         break;
-      case 'join':
+      case Action.join:
         //加入房间成功
         _onJoinRoom();
         break;
-      case 'sync':
+      case Action.sync:
         //同步播放状态
         _onSync();
         break;
-      case 'url':
+      case Action.url:
         // 设置播放地址
         _remoteState.url = model.url;
         _callback?.setUrl(model.url);
         break;
-      case 'play':
+      case Action.play:
         // 播放视频
         _remoteState.isPlaying = true;
         _callback?.play();
         break;
-      case 'pause':
+      case Action.pause:
         // 暂停视频
         _remoteState.isPlaying = false;
         _callback?.pause();
         break;
-      case 'seek':
+      case Action.seek:
         // 进度跳转
         _onSync();
         break;
-      case 'exit':
+      case Action.exit:
         // 房间已解散
         showToast("房间已解散");
         _heartBeatTimer?.cancel();
+        break;
+      case Action.heartbeat:
         break;
     }
   }
@@ -178,7 +184,7 @@ class Remote {
     if (kDebugMode) {
       print("心跳开启");
     }
-    _remoteCallback?.call();
+    _remoteCallback?.call(true);
     _remoteCallback = null;
 
     ///开启心跳同步播放状态
@@ -193,7 +199,7 @@ class Remote {
     if (_remoteCallback == null) {
       syncRemote();
     }
-    _remoteCallback?.call();
+    _remoteCallback?.call(true);
     _remoteCallback = null;
 
     ///开启心跳保持连接活动
@@ -211,17 +217,7 @@ class Remote {
       return;
     }
     _callback?.setUrl(url);
-    var diff =
-        (DateTime.now().millisecondsSinceEpoch - _remoteState.timestamp).abs();
-    int diffSecond = diff ~/ 1000;
-    //修正误差
-    if (diffSecond < 0) {
-      diffSecond = 0;
-    }
-    if (diffSecond > 10) {
-      diffSecond = 0;
-    }
-    var position = _remoteState.position + diffSecond + 2;
+    var position = _remoteState.position + 1;
     _callback?.seek(position);
     if (_remoteState.isPlaying) {
       _callback?.play();

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'action.dart';
+
 /// 传递json对象实体
 class PlayStateModel {
   //执行动作 [] 客户端发送专属信息 {} 服务端发送专属信息 ，其它为播放器通用信息
@@ -9,7 +11,7 @@ class PlayStateModel {
   // [heartbeat 只有房主心跳同步播放状态,join 加入房间或者创建,sync 请求同步房主进度],
   // {idle 新房间,wait 等待房主开播}
   // exit 退出房间/解散房间
-  String action = "join";
+  String action = "";
   String url = ""; //播放地址
   String roomId = ""; //房间id 6位int值
   bool isPlaying = false; // 是否正在播放
@@ -18,7 +20,7 @@ class PlayStateModel {
   int timestamp = 0; //时间戳 单位 毫秒
 
   PlayStateModel(
-      {this.action = "join",
+      {required this.action,
       this.isPlaying = false,
       this.isOwner = false,
       this.position = 0,
@@ -84,7 +86,16 @@ class JsonParse {
       if (kDebugMode) {
         print(e);
       }
-      return PlayStateModel();
+      return PlayStateModel(action: "");
     }
+  }
+}
+
+extension PlayStateModelExt on PlayStateModel {
+  Action actionEnum() {
+    return Action.values.firstWhere((element) => element.value == action,
+        orElse: () {
+      return Action.sync;
+    });
   }
 }

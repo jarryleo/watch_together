@@ -528,10 +528,10 @@ class _XmlReplay {
         <presentationURL>/</presentationURL>
         <friendlyName>$name</friendlyName>
         <manufacturer>flutter dlna server</manufacturer>
-        <manufacturerURL>https://github.com/suconghou/dlna-dart</manufacturerURL>
-        <modelDescription>flutter dlna fork from dlna-dart</modelDescription>
+        <manufacturerURL>https://github.com/jarryleo/watch_together.git</manufacturerURL>
+        <modelDescription>flutter dlna</modelDescription>
         <modelName>flutter dlna</modelName>
-        <modelURL>https://github.com/suconghou/dlna-dart</modelURL>
+        <modelURL>https://github.com/jarryleo/watch_together.git</modelURL>
         <UPC>000000000011</UPC>
         <UDN>uuid:$_uuid</UDN>
         <dlna:x_dlnadoc xmlns:dlna="urn:schemas-dlna-org:device-1-0">

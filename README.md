@@ -26,4 +26,7 @@ flutter 编写，支持多平台；
 windows安装包待上传；
 
 有自己服务器的开发者，自己部署服务端，修改客户端内的服务器ip即可；
-[https://github.com/jarryleo/WatchTogetherServer.git](https://github.com/jarryleo/WatchTogetherServer.git)
+
+选择 tcp 分支；
+
+[https://github.com/jarryleo/WatchTogetherServer.git](https://github.com/jarryleo/WatchTogetherServer/tree/tcp)

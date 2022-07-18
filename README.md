@@ -1,9 +1,21 @@
 # watch_together
 
-A project can watch video together on different device.
+
+## A project can watch video together on different device.
+
+
+==郑重声明：==
+> 1.本项目做为开源项目，不从事商业用途，不盈利；        
+> 2.采用GPL3许可证协议，不允许商用；          
+> 3.项目初衷是解决异地恋一起看片的需求；          
+> 4.项目技术原理：dlna投屏协议，跟投屏到电视原理一致；        
+> 5.用户投屏的视频内容与本项目无关，造成的侵权和法律责任由用户自己承担，本项目作者不承担任何责任；        
+
 利用dlna 投屏原理实现多端 异地一起看视频的项目；
 flutter 编写，支持多平台；
+
 目前支持 android，windows，iphone，ipad，linux；
+
 已测试：android，iphone，Windows；
 
 项目开源，不上架应用市场，安卓用户和windows 用户可以点击下面链接体验；

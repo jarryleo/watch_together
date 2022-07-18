@@ -12,8 +12,8 @@ typedef VoidCallback = void Function(bool);
 
 /// 同步服务端地址
 // const host = "47.99.190.206"; //big
-// const host = "112.74.55.142"; //阿里云
-const host = "192.168.2.1";
+const host = "112.74.55.142"; //阿里云
+// const host = "192.168.2.1";
 const int remotePort = 51127; //服务器端口
 
 ///跟服务端交互，获取 播放状态
@@ -40,6 +40,9 @@ class Remote {
 
   //心跳计时器
   Timer? _heartBeatTimer;
+
+  //本地客服端和服务器时间差
+  int _serverTimeDiff = 0;
 
   ///构造函数异步初始化udp
   Remote() {
@@ -112,6 +115,7 @@ class Remote {
 
   ///发送当前状态
   void _send(PlayStateModel model) {
+    model.timestamp = _getServerTime();
     var json = JsonParse.modelToJson(model);
     if (kDebugMode) {
       print("send : $json");
@@ -130,7 +134,21 @@ class Remote {
       print("remote receive : $text");
     }
     PlayStateModel model = JsonParse.jsonToModel(text);
+    _executeTimeDiff(model);
     _doAction(model);
+  }
+
+  ///计算服务器和本地时间差
+  void _executeTimeDiff(PlayStateModel model) {
+    var serverTime = model.timestamp;
+    var current = DateTime.now().millisecondsSinceEpoch;
+    _serverTimeDiff = serverTime - current;
+  }
+
+  ///获取消除误差后的时间
+  int _getServerTime() {
+    var current = DateTime.now().millisecondsSinceEpoch;
+    return current + _serverTimeDiff;
   }
 
   ///执行对方的动作
@@ -232,7 +250,6 @@ class Remote {
     var model = _remoteState;
     model.action = "join";
     model.roomId = roomId;
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }
 
@@ -242,7 +259,6 @@ class Remote {
     _heartBeatTimer?.cancel();
     var model = _remoteState.copyWith(action: "exit");
     model.roomId = roomId;
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }
 
@@ -251,7 +267,6 @@ class Remote {
     if (!isRoomOwner) return;
     var model = _remoteState;
     model.action = "url";
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _remoteState.url = url;
     _send(model);
   }
@@ -262,7 +277,6 @@ class Remote {
     var model = _remoteState;
     model.action = "play";
     model.isPlaying = true;
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }
 
@@ -272,7 +286,6 @@ class Remote {
     var model = _remoteState;
     model.action = "pause";
     model.isPlaying = false;
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }
 
@@ -282,7 +295,6 @@ class Remote {
     var model = _remoteState;
     model.action = "seek";
     model.position = position;
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }
 
@@ -291,7 +303,6 @@ class Remote {
     var model = _remoteState;
     if (model.isOwner) return;
     model.action = "sync";
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }
 
@@ -300,7 +311,6 @@ class Remote {
     var model = _remoteState.copyWith(url: ""); //心跳省略url，减少带宽消耗
     model.action = "heartbeat";
     model.position = _callback?.getPosition() ?? 0;
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
     _send(model);
   }
 

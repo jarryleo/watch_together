@@ -139,6 +139,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
   @override
   void setUrl(String url) {
     if (url == currentUrl) return;
+    currentUrl = url;
     player.setDataSource(url, autoPlay: true);
     remote.setUrl(url);
   }

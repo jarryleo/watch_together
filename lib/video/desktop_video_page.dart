@@ -177,6 +177,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
   @override
   void setUrl(String url) {
     if (url == currentUrl) return;
+    currentUrl = url;
     var media = Media.network(url);
     player.open(media);
     remote.setUrl(url);

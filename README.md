@@ -26,6 +26,8 @@ flutter 编写，支持多平台；
 
 项目开源，不上架应用市场，安卓用户和windows 用户可以点击下面链接体验；
 
+### 项目的服务器到期了，体验包无法连接服务器，需要感兴趣的伙伴自己搭建服务器哈。     
+
 安卓安装包下载：
 [Download Android watch_together_1.0.1.apk](https://github.com/jarryleo/watch_together/releases/download/1.0.1/watch_together_1.0.1.apk)    
 

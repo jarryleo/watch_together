@@ -31,6 +31,7 @@ dependencies:
     sdk: flutter
   #  get-x
   get: ^4.6.5
+  get_storage: ^2.1.1
   #  mqtt
   mqtt_client: ^10.0.0
   #  logger
@@ -39,20 +40,22 @@ dependencies:
   # 视频播放
   video_player: ^2.7.0
   fijkplayer: ^0.11.0
-  dart_vlc: ^0.3.0
+  dart_vlc: ^0.4.0
   xml: ^6.1.0
   # dlna 投屏库
   # dlna_dart: ^0.0.8
   # 网络请求库
   dio: ^4.0.6
   # 日期格式化库
-  intl: ^0.17.0
+  intl: ^0.18.0
   # json转换库
-  convert: ^3.0.2
+  convert: ^3.1.1
   # 屏幕保持常亮
   wakelock: ^0.6.2
   window_manager: ^0.2.3
   flutter_smart_dialog: ^4.9.4
+  # UUID
+  uuid: ^3.0.7
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

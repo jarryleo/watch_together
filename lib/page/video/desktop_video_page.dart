@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,9 +6,9 @@ import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/remote/remote.dart';
 
 class DesktopVideoPage extends StatefulWidget {
-  const DesktopVideoPage(this.remote, {Key? key}) : super(key: key);
-
   final Remote remote;
+
+  const DesktopVideoPage(this.remote, {Key? key}) : super(key: key);
 
   @override
   State<DesktopVideoPage> createState() => _DesktopVideoPageState();
@@ -28,7 +26,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
   bool _playing = false;
   Duration _currentPos = const Duration();
 
-  Player player = Player(id: 511, registerTexture: !Platform.isWindows);
+  Player player = Player(id: 511);
   MediaType mediaType = MediaType.file;
   CurrentState current = CurrentState();
   PositionState position = PositionState();
@@ -128,18 +126,10 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
           ),
         ],
       ),
-      body: Container(
-        child: Platform.isWindows
-            ? NativeVideo(
-                player: player,
-                volumeThumbColor: Colors.blue,
-                volumeActiveColor: Colors.blue,
-              )
-            : Video(
-                player: player,
-                volumeThumbColor: Colors.blue,
-                volumeActiveColor: Colors.blue,
-              ),
+      body: Video(
+        player: player,
+        volumeThumbColor: Colors.blue,
+        volumeActiveColor: Colors.blue,
       ),
     );
   }

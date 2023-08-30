@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:watch_together/logger/log_utils.dart';
+import 'package:watch_together/utils/client_id_util.dart';
 
 import 'mqtt_config.dart';
 import 'mqtt_observer.dart';
@@ -19,11 +20,13 @@ class XMqttClient {
   MqttServerClient? _client;
 
   final List<XMqttObserver> _observers = [];
+  final List<OnConnected> _onConnectedListener = [];
+  final List<OnDisconnected> _onDisconnectedListener = [];
 
   void connect() async {
     //client
     MqttServerClient client = MqttServerClient.withPort(
-        MqttConfig.host, MqttConfig.clientId, MqttConfig.port);
+        MqttConfig.host, ClientIdUtil.getClientId(), MqttConfig.port);
     _client = client;
 
     //config
@@ -41,9 +44,9 @@ class XMqttClient {
     client.setProtocolV311();
 
     //callback
-    client.onDisconnected = onDisconnected;
-    client.onConnected = onConnected;
-    client.onSubscribed = onSubscribed;
+    client.onDisconnected = _onDisconnected;
+    client.onConnected = _onConnected;
+    client.onSubscribed = _onSubscribed;
 
     //connect
     try {
@@ -54,8 +57,8 @@ class XMqttClient {
       if (MqttConnectionState.connected == mqttClientConnectionStatus?.state) {
         //连接成功
         //listener
-        client.published?.listen(publishListen);
-        client.updates?.listen(onDataArrived);
+        client.published?.listen(_publishListen);
+        client.updates?.listen(_onDataArrived);
       } else {
         //链接失败
         QLog.e(
@@ -69,13 +72,20 @@ class XMqttClient {
   }
 
   ///订阅mqtt主题
-  void subscribe(String topic) {
+  void _subscribe(String topic) {
     _client?.subscribe(topic, MqttQos.atLeastOnce);
   }
 
+  ///取消主题订阅
+  void unsubscribe(String topic) {
+    _client?.unsubscribe(topic);
+    _observers.removeWhere((element) => element.topic == topic);
+  }
+
+  ///订阅mqtt主题回调
   void subscribeWithObserver(XMqttObserver observer) {
     _observers.add(observer);
-    subscribe(observer.topic);
+    _subscribe(observer.topic);
   }
 
   ///发送主题消息
@@ -86,7 +96,7 @@ class XMqttClient {
   }
 
   ///发送回调监听
-  void publishListen(MqttPublishMessage message) {
+  void _publishListen(MqttPublishMessage message) {
     final String payload =
         MqttPublishPayload.bytesToStringAsString(message.payload.message);
     QLog.d(
@@ -94,16 +104,16 @@ class XMqttClient {
   }
 
   ///接收回调监听
-  void onDataArrived(List<MqttReceivedMessage<MqttMessage>> msgList) {
+  void _onDataArrived(List<MqttReceivedMessage<MqttMessage>> msgList) {
     for (var msg in msgList) {
       final String topic = msg.topic;
       final MqttMessage message = msg.payload;
-      onMessageArriving(topic, message);
+      _onMessageArriving(topic, message);
     }
   }
 
   ///接收消息监听
-  void onMessageArriving(String topic, MqttMessage message) {
+  void _onMessageArriving(String topic, MqttMessage message) {
     final String msg = MqttPublishPayload.bytesToStringAsString(
         (message as MqttPublishMessage).payload.message);
     for (var observer in _observers) {
@@ -119,15 +129,27 @@ class XMqttClient {
     return _client?.connectionStatus?.state == MqttConnectionState.connected;
   }
 
-  void onConnected() {
+  ///添加连接监听
+  void addOnConnectedListener(OnConnected listener) {
+    _onConnectedListener.add(listener);
+  }
+
+  ///添加断开连接监听
+  void addOnDisconnectedListener(OnDisconnected listener) {
+    _onDisconnectedListener.add(listener);
+  }
+
+  void _onConnected() {
+    for (var element in _onConnectedListener) { element();}
     QLog.d('mqtt client Connected');
   }
 
-  void onDisconnected() {
+  void _onDisconnected() {
+    for (var element in _onDisconnectedListener) { element();}
     QLog.d('mqtt client Disconnected');
   }
 
-  void onSubscribed(String topic) {
+  void _onSubscribed(String topic) {
     QLog.d('mqtt client Subscribed topic: $topic');
   }
 }

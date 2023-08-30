@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:oktoast/oktoast.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
+import 'package:watch_together/ext/string_ext.dart';
 import 'package:watch_together/remote/model.dart';
 
 import 'action.dart';
@@ -73,7 +73,7 @@ class Remote {
   /// 接收对面数据
   void _listen() async {
     _socket?.listen(_onData, onDone: _onDone, onError: _onError);
-    showToast("连接服务器成功");
+    "连接服务器成功".showToast();
     if (roomId.isNotEmpty) {
       join(roomId);
     }
@@ -100,14 +100,14 @@ class Remote {
     _heartBeatTimer?.cancel();
     _heartBeatTimer = null;
     //自动重连
-    showToast("连接已断开,2秒后自动重连");
+    "连接已断开,2秒后自动重连".showToast();
     Future.delayed(const Duration(seconds: 2), () {
       _start();
     });
   }
 
   ///连接出错
-  void _onError(err) {
+  _onError(err) {
     if (kDebugMode) {
       print(err);
     }
@@ -115,7 +115,7 @@ class Remote {
     _heartBeatTimer?.cancel();
     _heartBeatTimer = null;
     _remoteCallback?.call(false);
-    showToast("连接出错");
+    "连接出错".showToast();
   }
 
   ///发送当前状态
@@ -127,7 +127,7 @@ class Remote {
     }
     if (_socket == null) {
       _remoteCallback?.call(false);
-      showToast("连接服务器失败,请过会儿重启app后再尝试");
+      "连接服务器失败,请过会儿重启app后再尝试".showToast();
     } else {
       _socket?.writeln(json);
     }
@@ -194,7 +194,7 @@ class Remote {
         break;
       case Action.exit:
         // 房间已解散
-        showToast("房间已解散");
+        "房间已解散".showToast();
         _heartBeatTimer?.cancel();
         break;
       case Action.heartbeat:

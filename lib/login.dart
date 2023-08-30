@@ -1,15 +1,14 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:watch_together/page/video/desktop_video_page.dart';
+import 'package:watch_together/page/video/phone_video_page.dart';
 import 'package:watch_together/remote/remote.dart';
-import 'package:watch_together/video/desktop_video_page.dart';
-import 'package:watch_together/video/phone_video_page.dart';
 
 class JoinPage extends StatefulWidget {
-  JoinPage(this.remote, {Key? key}) : super(key: key);
+  const JoinPage(this.remote, {Key? key}) : super(key: key);
 
-  Remote remote;
+  final Remote remote;
 
   @override
   State<JoinPage> createState() => _JoinPageState();

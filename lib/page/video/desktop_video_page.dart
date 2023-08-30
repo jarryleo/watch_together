@@ -1,18 +1,16 @@
 import 'dart:io';
 
 import 'package:dart_vlc/dart_vlc.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
-
-import '../dlna/dlna_flutter.dart';
-import '../remote/remote.dart';
+import 'package:watch_together/dlna/dlna_flutter.dart';
+import 'package:watch_together/remote/remote.dart';
 
 class DesktopVideoPage extends StatefulWidget {
-  Remote remote;
+  const DesktopVideoPage(this.remote, {Key? key}) : super(key: key);
 
-  DesktopVideoPage(this.remote, {Key? key}) : super(key: key);
+  final Remote remote;
 
   @override
   State<DesktopVideoPage> createState() => _DesktopVideoPageState();
@@ -101,7 +99,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
       equalizer.setBandAmp(31.25, 10.0);
       player.setEqualizer(equalizer);
     }
-    if(!remote.isRoomOwner) {
+    if (!remote.isRoomOwner) {
       _sync();
     }
   }

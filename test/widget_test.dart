@@ -8,13 +8,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dlna_dart/dlna.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 
-import 'package:watch_together/main.dart';
 import 'package:watch_together/remote/model.dart';
 
 void main() {
@@ -31,7 +28,7 @@ void main() {
   });
 
   test("dlna test", () async {
-    final searcher = search();
+    final searcher = Search();
     final m = await searcher.start();
     Timer.periodic(const Duration(seconds: 3), (timer) {
       m.deviceList.forEach((key, value) async {

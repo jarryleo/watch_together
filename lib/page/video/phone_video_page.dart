@@ -1,10 +1,8 @@
 import 'package:fijkplayer/fijkplayer.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/remote/remote.dart';
-
-import '../dlna/dlna_flutter.dart';
 
 class PhoneVideoPage extends StatefulWidget {
   final Remote remote;
@@ -65,7 +63,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
       }
       _playing = playing;
     }
-    if(value.state == FijkState.prepared){
+    if (value.state == FijkState.prepared) {
       _sync();
     }
   }

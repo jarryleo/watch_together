@@ -107,7 +107,14 @@ class _XmlText {
       title = "roomId = $roomId, line = 0";
     }
     var meta =
-        '''<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:sec="http://www.sec.co.kr/"><item id="false" parentID="1" restricted="0"><dc:title>$title</dc:title><dc:creator>unkown</dc:creator><upnp:class>object.item.videoItem</upnp:class><res resolution="4"></res></item></DIDL-Lite>''';
+        '''<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:sec="http://www.sec.co.kr/">
+          <item id="false" parentID="1" restricted="0">
+            <dc:title>$title</dc:title>
+            <dc:creator>unkown</dc:creator>
+            <upnp:class>object.item.videoItem</upnp:class>
+            <res resolution="4"></res>
+          </item>
+        </DIDL-Lite>''';
     meta = _htmlEncode(meta);
     url = _htmlEncode(url);
     return '''<?xml version="1.0" encoding="utf-8" standalone="yes"?>
@@ -203,10 +210,10 @@ class _PositionParser {
 
   _PositionParser(String text) {
     var doc = XmlDocument.parse(text);
-    trackDuration = doc.findAllElements('TrackDuration').first.text;
-    trackURI = doc.findAllElements('TrackURI').first.text;
-    relTime = doc.findAllElements('RelTime').first.text;
-    absTime = doc.findAllElements('AbsTime').first.text;
+    trackDuration = doc.findAllElements('TrackDuration').first.innerText;
+    trackURI = doc.findAllElements('TrackURI').first.innerText;
+    relTime = doc.findAllElements('RelTime').first.innerText;
+    absTime = doc.findAllElements('AbsTime').first.innerText;
   }
 
   String seek(int n) {
@@ -255,19 +262,19 @@ class _XmlParser {
   DeviceInfo parse(Uri uri) {
     String baseUrl = "";
     try {
-      baseUrl = doc.findAllElements('URLBase').first.text;
+      baseUrl = doc.findAllElements('URLBase').first.innerText;
     } catch (e) {
       baseUrl = uri.origin;
     }
-    final deviceType = doc.findAllElements('deviceType').first.text;
-    final friendlyName = doc.findAllElements('friendlyName').first.text;
+    final deviceType = doc.findAllElements('deviceType').first.innerText;
+    final friendlyName = doc.findAllElements('friendlyName').first.innerText;
     final serviceList =
         doc.findAllElements('serviceList').first.findAllElements('service');
     final serviceListItems = [];
     for (final service in serviceList) {
-      final serviceType = service.findElements('serviceType').first.text;
-      final serviceId = service.findElements('serviceId').first.text;
-      final controlURL = service.findElements('controlURL').first.text;
+      final serviceType = service.findElements('serviceType').first.innerText;
+      final serviceId = service.findElements('serviceId').first.innerText;
+      final controlURL = service.findElements('controlURL').first.innerText;
       serviceListItems.add({
         "serviceType": serviceType,
         "serviceId": serviceId,
@@ -1308,7 +1315,7 @@ class _ServerXmlParser {
   String getElementText(String element) {
     var text = "";
     try {
-      text = doc.findAllElements(element).first.text;
+      text = doc.findAllElements(element).first.innerText;
     } catch (e) {
       if (kDebugMode) {
         print(e);

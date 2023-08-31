@@ -23,7 +23,7 @@ class XMqttClient {
   final List<OnConnected> _onConnectedListener = [];
   final List<OnDisconnected> _onDisconnectedListener = [];
 
-  void connect() async {
+  Future<bool> connect() async {
     //client
     MqttServerClient client = MqttServerClient.withPort(
         MqttConfig.host, ClientIdUtil.getClientId(), MqttConfig.port);
@@ -35,7 +35,7 @@ class XMqttClient {
     client.keepAlivePeriod = 60;
     client.connectTimeoutPeriod = 60;
     client.autoReconnect = true;
-    client.resubscribeOnAutoReconnect = true;
+    //client.resubscribeOnAutoReconnect = true;
 
     //SSL
     var defaultContext = SecurityContext.defaultContext;
@@ -59,15 +59,18 @@ class XMqttClient {
         //listener
         client.published?.listen(_publishListen);
         client.updates?.listen(_onDataArrived);
+        return true;
       } else {
-        //链接失败
+        //连接失败
         QLog.e(
             'mqtt client connection failed - disconnecting, status is ${mqttClientConnectionStatus?.state}');
         client.disconnect();
+        return false;
       }
     } on Exception catch (e) {
       QLog.e('mqtt client exception - $e');
       client.disconnect();
+      return false;
     }
   }
 
@@ -140,12 +143,16 @@ class XMqttClient {
   }
 
   void _onConnected() {
-    for (var element in _onConnectedListener) { element();}
+    for (var element in _onConnectedListener) {
+      element();
+    }
     QLog.d('mqtt client Connected');
   }
 
   void _onDisconnected() {
-    for (var element in _onDisconnectedListener) { element();}
+    for (var element in _onDisconnectedListener) {
+      element();
+    }
     QLog.d('mqtt client Disconnected');
   }
 

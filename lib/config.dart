@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dart_vlc/dart_vlc.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:watch_together/page/main/main_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'includes.dart';
@@ -19,6 +20,8 @@ class Config {
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       await initWindow();
     }
+    //初始化服务
+    await Get.putAsync(() => MainService().init());
   }
 
   ///初始化窗口设置

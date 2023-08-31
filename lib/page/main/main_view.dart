@@ -8,7 +8,7 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logic = Get.put(MainLogic());
+    final logic = Get.find<MainLogic>();
 
     return Container();
   }

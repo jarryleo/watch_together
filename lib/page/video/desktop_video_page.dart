@@ -3,12 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
+import 'package:watch_together/includes.dart';
+import 'package:watch_together/info/room_info.dart';
+import 'package:watch_together/page/main/main_logic.dart';
 import 'package:watch_together/remote/remote.dart';
 
 class DesktopVideoPage extends StatefulWidget {
-  final Remote remote;
-
-  const DesktopVideoPage(this.remote, {Key? key}) : super(key: key);
+  const DesktopVideoPage({super.key});
 
   @override
   State<DesktopVideoPage> createState() => _DesktopVideoPageState();
@@ -16,16 +17,13 @@ class DesktopVideoPage extends StatefulWidget {
 
 class _DesktopVideoPageState extends State<DesktopVideoPage>
     implements PlayerAction {
-  DlnaServer dlnaServer = DlnaServer();
-  late Remote remote;
 
+  final MainLogic mainLogic = Get.find<MainLogic>();
   //当前播放的url
   var currentUrl = "";
 
   //播放状态
   bool _playing = false;
-  Duration _currentPos = const Duration();
-
   Player player = Player(id: 511);
   MediaType mediaType = MediaType.file;
   CurrentState current = CurrentState();
@@ -44,9 +42,6 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
   @override
   void initState() {
     super.initState();
-    remote = widget.remote;
-    remote.setActionCallback(this);
-    dlnaServer.start(this);
     if (mounted) {
       player.currentStream.listen((current) {
         setState(() => this.current = current);
@@ -55,21 +50,17 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
         setState(() => this.position = position);
         var pos = position.position;
         if (pos != null) {
-          //如果本地进度和播放器进度误差超过5s，则同步进度
-          if ((pos.inSeconds - _currentPos.inSeconds).abs() >= 5) {
-            remote.seek(pos.inSeconds);
-          }
-          _currentPos = pos;
+          RoomInfo.playerInfo.position = pos.inSeconds;
         }
       });
       player.playbackStream.listen((playback) {
         setState(() => this.playback = playback);
         if (_playing != playback.isPlaying) {
           if (playback.isPlaying) {
-            remote.play();
+            //remote.play();
             Wakelock.enable();
           } else {
-            remote.pause();
+            //remote.pause();
             Wakelock.disable();
           }
         }
@@ -97,9 +88,9 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
       equalizer.setBandAmp(31.25, 10.0);
       player.setEqualizer(equalizer);
     }
-    if (!remote.isRoomOwner) {
+    /*if (!remote.isRoomOwner) {
       _sync();
-    }
+    }*/
   }
 
   @override
@@ -107,9 +98,9 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
     super.dispose();
     player.stop();
     player.dispose();
-    dlnaServer.stop();
-    remote.exit();
-    remote.dispose();
+    // dlnaServer.stop();
+    // remote.exit();
+    // remote.dispose();
   }
 
   @override
@@ -117,7 +108,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
     return Scaffold(
       appBar: AppBar(
         title:
-            Text("房间号：${remote.roomId}(${remote.isRoomOwner ? "房主" : "观众"})"),
+            Text("房间号：${RoomInfo.roomId}(${RoomInfo.isOwner ? "房主" : "观众"})"),
         actions: [
           IconButton(
             icon: const Icon(Icons.sync),
@@ -135,7 +126,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
   }
 
   void _sync() {
-    remote.syncRemote();
+    //remote.syncRemote();
   }
 
   @override
@@ -174,7 +165,7 @@ class _DesktopVideoPageState extends State<DesktopVideoPage>
     currentUrl = url;
     var media = Media.network(url);
     player.open(media);
-    remote.setUrl(url);
+    //remote.setUrl(url);
   }
 
   @override

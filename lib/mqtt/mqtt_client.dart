@@ -74,6 +74,11 @@ class XMqttClient {
     }
   }
 
+  ///断开连接
+  void disconnect() {
+    _client?.disconnect();
+  }
+
   ///订阅mqtt主题
   void _subscribe(String topic) {
     _client?.subscribe(topic, MqttQos.atLeastOnce);

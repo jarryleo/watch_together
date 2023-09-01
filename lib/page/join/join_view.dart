@@ -43,16 +43,11 @@ class _JoinPageState extends State<JoinPage> {
                   ),
                   decoration: InputDecoration(
                     hintText: "请输入房间号",
-                    errorText: logic.errText.value,
+                    errorText: logic.isError.value ? "请输入6位数的房间号" : null,
                   ),
                   keyboardType: TextInputType.number,
                   autofocus: true,
                   maxLength: 6,
-                  onChanged: (text) {
-                    setState(() {
-                      logic.errText.value = '';
-                    });
-                  },
                   onSubmitted: (text) {
                     logic.joinRoom();
                   });

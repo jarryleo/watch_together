@@ -439,14 +439,14 @@ class Search {
       _search(socketClient, "urn:schemas-upnp-org:device:MediaRenderer:1");
       _parseReceiver(socketClient, m);
     });
-      //接收投屏设备广播的协议
+    //接收投屏设备广播的协议
     receiver = Timer.periodic(const Duration(seconds: 2), (Timer t) async {
       _parseReceiver(socketServer!, m);
     });
     return m;
   }
 
-  void _parseReceiver(RawDatagramSocket socket , Manager manager) async {
+  void _parseReceiver(RawDatagramSocket socket, Manager manager) async {
     // 如果有原路返回的数据则解析
     final replay = socket.receive();
     if (replay == null) {
@@ -1122,13 +1122,18 @@ extension DlnaEventExt on DlnaEvent {
 }
 
 class DlnaServer {
+  static final DlnaServer _singleton = DlnaServer._internal();
+
+  factory DlnaServer({String name = ""}) {
+    _singleton._name = name;
+    return _singleton;
+  }
+
+  DlnaServer._internal({String name = ""});
+
   String? _name;
 
-  final Map<String,_ServerListen> _serverMap = {};
-
-  DlnaServer({String name = ""}) {
-    _name = name;
-  }
+  final Map<String, _ServerListen> _serverMap = {};
 
   /// 启动dlna 服务
   void start(PlayerAction action) async {
@@ -1144,13 +1149,14 @@ class DlnaServer {
   }
 
   /// 如果电脑连接了多个网段，开启多个网段服务
-  void _startListenWithIp(String ip, int port, String name, PlayerAction action) {
+  void _startListenWithIp(
+      String ip, int port, String name, PlayerAction action) {
     var xmlReplay = _XmlReplay(ip, port, name);
     _Handler(ip, port, action, xmlReplay);
     //启动dlna 服务
     var serverListen = _ServerListen(xmlReplay);
     _serverMap[ip] = serverListen;
-    serverListen.start(ip, port,reusePort: Platform.isIOS);
+    serverListen.start(ip, port, reusePort: Platform.isIOS);
   }
 
   ///停止接收投屏
@@ -1198,8 +1204,8 @@ class _ServerListen {
       // print('Datagram from ${d.address.address}:${d.port}: ${message}');
       try {
         // 分析接收到的数据
-        var serverParser =
-            _ServerParser(message, clientAddress, clientPort, _socketServer!, _xmlReplay);
+        var serverParser = _ServerParser(
+            message, clientAddress, clientPort, _socketServer!, _xmlReplay);
         serverParser.get();
       } catch (e) {
         if (kDebugMode) {
@@ -1261,12 +1267,8 @@ class _ServerParser {
   late List<String> _lines;
   late final _XmlReplay _xmlReplay;
 
-  _ServerParser(
-      this._message,
-      this._clientAddress,
-      this._clientPort,
-      this._socket,
-      this._xmlReplay) {
+  _ServerParser(this._message, this._clientAddress, this._clientPort,
+      this._socket, this._xmlReplay) {
     final lines = _message.split('\n');
     _lines = lines;
   }
@@ -1341,7 +1343,7 @@ class _Handler {
   late _XmlReplay _xmlReplay;
 
   /// 开启http服务器
-  _Handler(String ip, int port, PlayerAction action,_XmlReplay xmlReplay) {
+  _Handler(String ip, int port, PlayerAction action, _XmlReplay xmlReplay) {
     _action = action;
     _xmlReplay = xmlReplay;
     HttpServer.bind(ip, port).then((value) {
@@ -1536,7 +1538,6 @@ class _Handler {
 
 /// 客户端和服务端交互事件
 abstract class PlayerAction {
-
   ///接收客户端投屏过来的播放地址
   void setUrl(String url);
 

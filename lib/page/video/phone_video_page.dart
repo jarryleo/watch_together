@@ -2,12 +2,11 @@ import 'package:fijkplayer/fijkplayer.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
+import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/remote/remote.dart';
 
 class PhoneVideoPage extends StatefulWidget {
-  final Remote remote;
-
-  const PhoneVideoPage(this.remote, {Key? key}) : super(key: key);
+  const PhoneVideoPage({super.key});
 
   @override
   State<PhoneVideoPage> createState() => _PhoneVideoPageState();
@@ -16,7 +15,6 @@ class PhoneVideoPage extends StatefulWidget {
 class _PhoneVideoPageState extends State<PhoneVideoPage>
     implements PlayerAction {
   DlnaServer dlnaServer = DlnaServer();
-  late Remote remote;
   FijkPlayer player = FijkPlayer();
 
   //当前播放的url
@@ -29,20 +27,20 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
   @override
   void initState() {
     super.initState();
-    remote = widget.remote;
-    remote.setActionCallback(this);
-    if (remote.isRoomOwner) {
+    //remote = widget.remote;
+    //remote.setActionCallback(this);
+    /*if (remote.isRoomOwner) {
       //房主才能开启投屏
       dlnaServer.start(this);
     } else {
       //观众同步房主信息
       _sync();
-    }
+    }*/
     player.addListener(_playerValueChanged);
     player.onCurrentPosUpdate.listen((pos) {
       //如果本地进度和播放器进度误差超过5s，则同步进度
       if ((pos.inSeconds - _currentPos.inSeconds).abs() >= 5) {
-        remote.seek(pos.inSeconds);
+        //remote.seek(pos.inSeconds);
       }
       _currentPos = pos;
     });
@@ -55,10 +53,10 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
     if (playing != _playing) {
       //播放暂停控制
       if (playing) {
-        remote.play();
+        //remote.play();
         Wakelock.enable();
       } else {
-        remote.pause();
+        //remote.pause();
         Wakelock.disable();
       }
       _playing = playing;
@@ -75,7 +73,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
     player.release();
     player.dispose();
     dlnaServer.stop();
-    remote.exit();
+    //remote.exit();
   }
 
   @override
@@ -83,7 +81,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
     return Scaffold(
       appBar: AppBar(
         title:
-            Text("房间号：${remote.roomId}(${remote.isRoomOwner ? "房主" : "观众"})"),
+            Text("房间号：${RoomInfo.roomId}(${RoomInfo.isOwner ? "房主" : "观众"})"),
       ),
       body: Column(
         children: [
@@ -105,7 +103,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
   }
 
   void _sync() {
-    remote.syncRemote();
+    //remote.syncRemote();
   }
 
   @override
@@ -145,7 +143,7 @@ class _PhoneVideoPageState extends State<PhoneVideoPage>
     if (url == currentUrl) return;
     currentUrl = url;
     player.setDataSource(url, autoPlay: true);
-    remote.setUrl(url);
+    //remote.setUrl(url);
   }
 
   @override

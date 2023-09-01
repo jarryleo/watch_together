@@ -113,10 +113,19 @@ class MainService extends GetxService {
     _parseAction(topic, message);
   }
 
+  void setCallback(PlayerAction callback) {
+    _callback = callback;
+  }
+
   ///加入房间
   Future<bool> join(String roomId) async {
     RoomInfo.roomId = roomId;
     return mqttClient.connect();
+  }
+
+  ///退出房间
+  void exit() {
+    mqttClient.disconnect();
   }
 
   ///请求房主同步播放信息，5秒没收到回复则自动成为房主

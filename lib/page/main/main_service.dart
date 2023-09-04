@@ -132,6 +132,7 @@ class MainService extends GetxService {
   ///退出房间
   void exit() {
     mqttClient.disconnect();
+    RoomInfo.reset();
   }
 
   ///请求房主同步播放信息，5秒没收到回复则自动成为房主

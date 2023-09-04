@@ -18,4 +18,11 @@ class RoomInfo {
 
   ///房间播放状态
   static PlayerInfo playerInfo = PlayerInfo();
+
+  ///重置房间信息
+  static void reset() {
+    roomId = "";
+    isOwner = false;
+    playerInfo = PlayerInfo();
+  }
 }

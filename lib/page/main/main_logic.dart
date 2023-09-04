@@ -2,12 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/info/room_info.dart';
+import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_service.dart';
 import 'package:watch_together/remote/room_owner_callback.dart';
+import 'package:watch_together/route/router_helper.dart';
 
 abstract class MainLogic extends GetxController
     implements PlayerAction, RoomOwnerCallback {
-  final DlnaServer dlnaServer = DlnaServer();
+  final DlnaServer dlnaServer = DlnaServer(name: RouterHelper.appName);
   final MainService mainService = Get.find<MainService>();
   var isRoomOwner = false.obs;
 
@@ -23,8 +25,10 @@ abstract class MainLogic extends GetxController
     this.isRoomOwner.value = isRoomOwner;
     if (isRoomOwner) {
       dlnaServer.start(this);
+      QLog.d("start dlna server");
     } else {
       dlnaServer.stop();
+      QLog.d("stop dlna server");
     }
   }
 

@@ -1124,12 +1124,12 @@ extension DlnaEventExt on DlnaEvent {
 class DlnaServer {
   static final DlnaServer _singleton = DlnaServer._internal();
 
-  factory DlnaServer({String name = ""}) {
+  factory DlnaServer({String name = "Flutter Dlna"}) {
     _singleton._name = name;
     return _singleton;
   }
 
-  DlnaServer._internal({String name = ""});
+  DlnaServer._internal();
 
   String? _name;
 

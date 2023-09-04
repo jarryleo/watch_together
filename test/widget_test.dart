@@ -12,10 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 
-import 'package:watch_together/remote/model.dart';
-
 void main() {
-
   test("localIp", () async {
     var activeIpList = List.empty(growable: true);
     var list = await NetworkInterface.list(type: InternetAddressType.IPv4);
@@ -49,7 +46,8 @@ void main() {
   });
 
   test("dateFormat", () {
-    var date = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",'en_US').format(DateTime.now());
+    var date = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US')
+        .format(DateTime.now());
     print(date);
     var time = const Duration(seconds: 5000).toString();
     var t = time.split(".")[0];
@@ -73,19 +71,5 @@ void main() {
       var path = request.uri.path;
       print(path);
     });
-  });
-
-  test("enum", (){
-    final actionList = DlnaEvent.values.map((e) => e.value);
-    print(actionList);
-  });
-
-  test("json", (){
-    var model = PlayStateModel(action: "");
-    model.action = "play";
-    model.position = 11;
-    model.timestamp = DateTime.now().millisecondsSinceEpoch;
-
-    print(JsonParse.modelToJson(model));
   });
 }

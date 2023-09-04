@@ -1,17 +1,31 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
+import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/page/main/main_service.dart';
+import 'package:watch_together/remote/room_owner_callback.dart';
 
-class MainLogic extends GetxController implements PlayerAction {
+abstract class MainLogic extends GetxController
+    implements PlayerAction, RoomOwnerCallback {
   final DlnaServer dlnaServer = DlnaServer();
   final MainService mainService = Get.find<MainService>();
-  
+  var isRoomOwner = false.obs;
+
   @override
   void onInit() {
     super.onInit();
-    mainService.setCallback(this);
-    //房主才启动投屏功能 todo
-    dlnaServer.start(this);
+    mainService.setPlayerInfoCallback(this);
+    mainService.setRoomOwnerCallback(this);
+  }
+
+  @override
+  void onRoomOwnerChanged(bool isRoomOwner) {
+    this.isRoomOwner.value = isRoomOwner;
+    if (isRoomOwner) {
+      dlnaServer.start(this);
+    } else {
+      dlnaServer.stop();
+    }
   }
 
   @override
@@ -21,46 +35,41 @@ class MainLogic extends GetxController implements PlayerAction {
     dlnaServer.stop();
   }
 
-  @override
-  int getDuration() {
-    // TODO: implement getDuration
-    throw UnimplementedError();
+  void sync() {
+    mainService.sync();
   }
 
-  @override
-  int getPosition() {
-    // TODO: implement getPosition
-    throw UnimplementedError();
-  }
-
-  @override
-  int getVolume() {
-    // TODO: implement getVolume
-    throw UnimplementedError();
-  }
-
+  @mustCallSuper
   @override
   void pause() {
-    // TODO: implement pause
+    RoomInfo.playerInfo.isPlaying = false;
+    mainService.pause();
   }
 
+  @mustCallSuper
   @override
   void play() {
-    // TODO: implement play
+    RoomInfo.playerInfo.isPlaying = true;
+    mainService.play();
   }
 
+  @mustCallSuper
   @override
   void seek(int position) {
-    // TODO: implement seek
+    RoomInfo.playerInfo.position = position;
+    mainService.seek(position);
   }
 
+  @mustCallSuper
   @override
   void setUrl(String url) {
-    // TODO: implement setUrl
+    RoomInfo.playerInfo.url = url;
   }
 
+  @mustCallSuper
   @override
   void stop() {
-    // TODO: implement stop
+    RoomInfo.playerInfo.url = "";
+    RoomInfo.playerInfo.isPlaying = false;
   }
 }

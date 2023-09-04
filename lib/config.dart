@@ -14,7 +14,7 @@ class Config {
     await GetStorage.init();
     //初始化vlc
     if (Platform.isWindows || Platform.isLinux) {
-      DartVLC.initialize();
+      DartVLC.initialize(useFlutterNativeView: true);
     }
     //初始化窗口
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {

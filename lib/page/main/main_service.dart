@@ -6,9 +6,11 @@ import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/mqtt/mqtt_client.dart';
 import 'package:watch_together/mqtt/mqtt_observer.dart';
 import 'package:watch_together/mqtt/mqtt_topic.dart';
+import 'package:watch_together/remote/room_owner_callback.dart';
 
 class MainService extends GetxService {
   PlayerAction? _callback;
+  RoomOwnerCallback? _roomOwnerCallback;
   XMqttClient mqttClient = XMqttClient();
   bool _roomHasOwner = false;
 
@@ -113,8 +115,12 @@ class MainService extends GetxService {
     _parseAction(topic, message);
   }
 
-  void setCallback(PlayerAction callback) {
+  void setPlayerInfoCallback(PlayerAction callback) {
     _callback = callback;
+  }
+
+  void setRoomOwnerCallback(RoomOwnerCallback callback) {
+    _roomOwnerCallback = callback;
   }
 
   ///加入房间
@@ -172,6 +178,7 @@ class MainService extends GetxService {
     _unsubscribe(ActionTopic.pause);
     _unsubscribe(ActionTopic.seek);
     _unsubscribe(ActionTopic.state);
+    _roomOwnerCallback?.onRoomOwnerChanged(RoomInfo.isOwner);
   }
 
   ///成为客户端，需监听播放，暂停，跳转，同步播放进度信息，其它信息忽略
@@ -183,5 +190,6 @@ class MainService extends GetxService {
     _subscribe(ActionTopic.state);
     _unsubscribe(ActionTopic.join);
     _unsubscribe(ActionTopic.sync);
+    _roomOwnerCallback?.onRoomOwnerChanged(RoomInfo.isOwner);
   }
 }

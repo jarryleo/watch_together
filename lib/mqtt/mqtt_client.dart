@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:watch_together/logger/log_utils.dart';
@@ -30,18 +31,12 @@ class XMqttClient {
     _client = client;
 
     //config
-    client.logging(on: false);
+    client.logging(on: true);
     client.secure = true;
     client.keepAlivePeriod = 60;
     client.connectTimeoutPeriod = 60;
     client.autoReconnect = true;
     //client.resubscribeOnAutoReconnect = true;
-
-    //SSL
-    var defaultContext = SecurityContext.defaultContext;
-    defaultContext.setTrustedCertificates(MqttConfig.crtFile);
-    client.securityContext = defaultContext;
-    client.setProtocolV311();
 
     //callback
     client.onDisconnected = _onDisconnected;
@@ -50,6 +45,13 @@ class XMqttClient {
 
     //connect
     try {
+      //SSL
+      var defaultContext = SecurityContext.defaultContext;
+      //defaultContext.setTrustedCertificates(MqttConfig.crtFile);
+      var certBytes = await rootBundle.load(MqttConfig.crtFile);
+      defaultContext.setTrustedCertificatesBytes(certBytes.buffer.asInt8List());
+      client.securityContext = defaultContext;
+      client.setProtocolV311();
       //开始连接
       var mqttClientConnectionStatus =
           await client.connect(MqttConfig.username, MqttConfig.password);

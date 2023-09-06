@@ -42,7 +42,6 @@ class PhoneVideoPage extends StatelessWidget {
                   top: 0,
                   bottom: 0,
                   child: BarrageWall(
-                    massiveMode: false, // disabled by default
                     controller: logic.barrageWallController,
                     child: Container(),
                   ),

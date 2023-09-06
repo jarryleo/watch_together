@@ -25,6 +25,10 @@ class SendDanmakuInput extends StatelessWidget {
                 border: InputBorder.none,
                 hintText: '发送弹幕',
               ),
+              onSubmitted: (value) {
+                onSend?.call(value);
+                _controller.clear();
+              },
             ),
           ),
           const SizedBox(width: 8),

@@ -1,4 +1,5 @@
 import 'package:dart_vlc/dart_vlc.dart';
+import 'package:flutter_barrage/flutter_barrage.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
@@ -21,6 +22,10 @@ class DesktopVideoLogic extends MainLogic {
   TextEditingController metasController = TextEditingController();
   double bufferingProgress = 0.0;
   Media? metasMedia;
+
+  final BarrageWallController barrageWallController = BarrageWallController();
+
+  var isDanmakuInputShow = false.obs;
 
   @override
   void onInit() {
@@ -123,5 +128,22 @@ class DesktopVideoLogic extends MainLogic {
   void stop() {
     super.stop();
     player.stop();
+  }
+
+  @override
+  void onDanmakuArrived(String danmakuText) {
+    _addDanmaku(danmakuText);
+  }
+
+  ///屏幕展示弹幕
+  void _addDanmaku(String message) {
+    barrageWallController.send([
+      Bullet(
+        child: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+    ]);
   }
 }

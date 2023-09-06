@@ -8,4 +8,10 @@ extension StringExt on String {
       SmartDialog.showToast(this, alignment: Alignment.center);
     }
   }
+
+  void showSnackBar() {
+    if (trim().isNotEmpty) {
+      Get.snackbar("提示", this, colorText: Colors.white);
+    }
+  }
 }

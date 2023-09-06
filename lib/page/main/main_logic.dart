@@ -1,11 +1,12 @@
-import 'package:flutter/cupertino.dart';
-import 'package:get/get.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
+import 'package:watch_together/ext/string_ext.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_service.dart';
 import 'package:watch_together/remote/room_owner_callback.dart';
 import 'package:watch_together/route/router_helper.dart';
+
+import '../../includes.dart';
 
 abstract class MainLogic extends GetxController
     implements PlayerAction, RoomOwnerCallback {
@@ -26,7 +27,7 @@ abstract class MainLogic extends GetxController
     if (isRoomOwner) {
       dlnaServer.start(this);
       QLog.d("start dlna server");
-      Get.snackbar("提示", "您已成为房主，可以进行投屏等操作");
+      "您已成为房主，可以进行投屏等操作".showSnackBar();
     } else {
       dlnaServer.stop();
       QLog.d("stop dlna server");
@@ -39,8 +40,12 @@ abstract class MainLogic extends GetxController
   }
 
   void sync() {
-    Get.snackbar("提示", "正在申请同步，请稍后...");
-    mainService.sync();
+    if (RoomInfo.isOwner) {
+      "您是房主，无需同步".showSnackBar();
+    } else {
+      "正在同步房主的播放进度".showSnackBar();
+      mainService.sync();
+    }
   }
 
   @mustCallSuper

@@ -26,17 +26,13 @@ flutter 编写，支持多平台；
 
 项目开源，不上架应用市场，安卓用户和windows 用户可以点击下面链接体验；
 
-### 项目的服务器到期了，体验包无法连接服务器，需要感兴趣的伙伴自己搭建服务器哈。     
+ios用户需要自己编译；
 
-安卓安装包下载：
-[Download Android watch_together_1.0.1.apk](https://github.com/jarryleo/watch_together/releases/download/1.0.1/watch_together_1.0.1.apk)    
+### 关于MQTT:
 
-windows 安装包下载：
-[Download Windows installer WatchTogether.zip](https://github.com/jarryleo/watch_together/releases/download/1.0.1/WatchTogther.zip)
+本项目采用mqtt协议，实现多端同步；
 
+mqtt服务器采用[EMQX CLOUD](https://cloud.emqx.com/)免费服务器，每月有1G免费流量，可同时连接1000客户端；
 
-有自己服务器的开发者，自己部署服务端，修改客户端内的服务器ip即可；
+如果流量不够用，可以自己搭建或申请mqtt服务器，修改代码中的mqtt_config的服务器配置即可；
 
-选择 tcp 分支：
-
-[https://github.com/jarryleo/WatchTogetherServer.git](https://github.com/jarryleo/WatchTogetherServer/tree/tcp)

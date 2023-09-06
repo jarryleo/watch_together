@@ -69,13 +69,11 @@ class DesktopVideoPage extends StatelessWidget {
               ),
             ),
             Obx(() {
-              return Column(
-                children: [
-                  if (logic.isDanmakuInputShow.value)
-                    SendDanmakuInput(
-                      onSend: (text) => logic.sendDanmaku(text),
-                    ),
-                ],
+              return Visibility(
+                visible: logic.isDanmakuInputShow.value,
+                child: SendDanmakuInput(
+                  onSend: (text) => logic.sendDanmaku(text),
+                ),
               );
             }),
           ],

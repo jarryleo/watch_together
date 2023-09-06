@@ -116,11 +116,17 @@ bool Win32Window::CreateAndShow(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
+  UINT scrWidth = GetSystemMetrics(SM_CXFULLSCREEN);//屏幕宽度
+  UINT scrHeight = GetSystemMetrics(SM_CYFULLSCREEN);//屏幕高度
+  UINT windowWidth = Scale(size.width, scale_factor);//缩放后的窗口宽度
+  UINT windowHeight = Scale(size.height, scale_factor);//缩放后的窗口高度
+  UINT windowOriginX = (scrWidth - windowWidth) / 2;//窗口原点X坐标
+  UINT windowOriginY = (scrHeight - windowHeight) / 2;//窗口原点y坐标
   HWND window = CreateWindow(
-      window_class, title.c_str(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-      Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
-      Scale(size.width, scale_factor), Scale(size.height, scale_factor),
+      window_class, title.c_str(), WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE,
+      windowOriginX,windowOriginY,windowWidth,windowHeight,
       nullptr, nullptr, GetModuleHandle(nullptr), this);
+
 
   if (!window) {
     return false;

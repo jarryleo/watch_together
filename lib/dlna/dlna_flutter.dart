@@ -496,7 +496,7 @@ class _PlayStatus {
   static int duration = 0; //视频长度，单位秒
 }
 
-/// dlna 服务端常用 xml 指令 (对dlna 客服端的回复)
+/// dlna 服务端常用 xml 指令 (对dlna 客户端的回复)
 class _XmlReplay {
   String ip;
   int port;
@@ -682,7 +682,7 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 </s:Envelope>''';
   }
 
-  /// 客服端发送拖拽进度 返回成功信息
+  /// 客户端发送拖拽进度 返回成功信息
   static String seekResp() {
     return '''<?xml version="1.0" encoding="UTF-8"?>
 <s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
@@ -1095,30 +1095,19 @@ s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 
 /// dlna 事件
 enum DlnaEvent {
-  setUri,
-  play,
-  pause,
-  stop,
-  seek,
-  getPositionInfo,
-  getTransportInfo,
-  getVolume,
-  getMediaInfo
-}
+  setUri('SetAVTransportURI'),
+  play('Play'),
+  pause('Pause'),
+  stop('Stop'),
+  seek('Seek'),
+  getPositionInfo('GetPositionInfo'),
+  getTransportInfo('GetTransportInfo'),
+  getVolume('GetVolume'),
+  getMediaInfo('GetMediaInfo');
 
-///dlna 事件枚举拓展
-extension DlnaEventExt on DlnaEvent {
-  String get value => [
-        'SetAVTransportURI',
-        'Play',
-        'Pause',
-        'Stop',
-        'Seek',
-        'GetPositionInfo',
-        'GetTransportInfo',
-        'GetVolume',
-        'GetMediaInfo'
-      ][index];
+  final String value;
+
+  const DlnaEvent(this.value);
 }
 
 class DlnaServer {
@@ -1541,7 +1530,7 @@ abstract class PlayerAction {
   ///接收客户端投屏过来的播放地址
   void setUrl(String url);
 
-  ///客服端发来 播放指令
+  ///客户端发来 播放指令
   void play();
 
   ///客户端发来 暂停指令

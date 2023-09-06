@@ -36,8 +36,8 @@ class XMqttClient {
     client.secure = true;
     client.keepAlivePeriod = 60;
     client.connectTimeoutPeriod = 60;
-    client.autoReconnect = true;
-    //client.resubscribeOnAutoReconnect = true;
+    client.autoReconnect = false;
+    client.resubscribeOnAutoReconnect = false;
 
     //callback
     client.onDisconnected = _onDisconnected;
@@ -84,7 +84,6 @@ class XMqttClient {
     } else {
       QLog.d('mqtt client already disconnected');
     }
-    _observers.clear();
   }
 
   ///订阅mqtt主题
@@ -169,6 +168,7 @@ class XMqttClient {
     for (var element in _onDisconnectedListener) {
       element();
     }
+    _observers.clear();
     QLog.d('mqtt client Disconnected');
   }
 

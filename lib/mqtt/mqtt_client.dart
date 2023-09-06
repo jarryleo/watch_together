@@ -78,7 +78,11 @@ class XMqttClient {
 
   ///断开连接
   void disconnect() {
-    _client?.disconnect();
+    if (isConnected()){
+      _client?.disconnect();
+    }else{
+      QLog.d('mqtt client already disconnected');
+    }
   }
 
   ///订阅mqtt主题
@@ -131,7 +135,6 @@ class XMqttClient {
         observer.onMessage(topic, msg);
       }
     }
-    QLog.d('mqtt client message arrived: $topic - $msg');
   }
 
   ///是否已连接

@@ -36,13 +36,17 @@ class MainService extends GetxService {
 
   ///订阅action topic
   void _subscribe(ActionTopic topic) {
-    mqttClient.subscribeWithObserver(XMqttObserver(
-        topic.getTopicWithRoomId(RoomInfo.roomId), _onMsgArrived));
+    if (mqttClient.isConnected()) {
+      mqttClient.subscribeWithObserver(XMqttObserver(
+          topic.getTopicWithRoomId(RoomInfo.roomId), _onMsgArrived));
+    }
   }
 
   ///取消订阅action topic
   void _unsubscribe(ActionTopic topic) {
-    mqttClient.unsubscribe(topic.getTopicWithRoomId(RoomInfo.roomId));
+    if (mqttClient.isConnected()) {
+      mqttClient.unsubscribe(topic.getTopicWithRoomId(RoomInfo.roomId));
+    }
   }
 
   ///解析action topic
@@ -115,24 +119,28 @@ class MainService extends GetxService {
     _parseAction(topic, message);
   }
 
-  void setPlayerInfoCallback(PlayerAction callback) {
+  void setPlayerInfoCallback(PlayerAction? callback) {
     _callback = callback;
   }
 
-  void setRoomOwnerCallback(RoomOwnerCallback callback) {
+  void setRoomOwnerCallback(RoomOwnerCallback? callback) {
     _roomOwnerCallback = callback;
   }
 
   ///加入房间
   Future<bool> join(String roomId) async {
+    QLog.d("join room");
     RoomInfo.roomId = roomId;
     return mqttClient.connect();
   }
 
   ///退出房间
   void exit() {
+    _roomOwnerCallback = null;
+    _callback = null;
     mqttClient.disconnect();
     RoomInfo.reset();
+    QLog.d("exit room");
   }
 
   ///请求房主同步播放信息，5秒没收到回复则自动成为房主

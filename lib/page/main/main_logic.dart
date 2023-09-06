@@ -26,15 +26,14 @@ abstract class MainLogic extends GetxController
     if (isRoomOwner) {
       dlnaServer.start(this);
       QLog.d("start dlna server");
+      Get.snackbar("提示", "已成为房主，可以投屏了");
     } else {
       dlnaServer.stop();
       QLog.d("stop dlna server");
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  void exitRoom() {
     mainService.exit();
     dlnaServer.stop();
   }

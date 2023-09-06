@@ -107,14 +107,15 @@ class XMqttClient {
     final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
     builder.addString(message);
     _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+    QLog.d('mqtt client publish: $topic - $message');
   }
 
   ///发送回调监听
   void _publishListen(MqttPublishMessage message) {
-    final String payload =
+    /*final String payload =
         MqttPublishPayload.bytesToStringAsString(message.payload.message);
     QLog.d(
-        'mqtt client publish listen: ${message.variableHeader?.topicName} - $payload');
+        'mqtt client publish listen: ${message.variableHeader?.topicName} - $payload');*/
   }
 
   ///接收回调监听

@@ -26,7 +26,7 @@ abstract class MainLogic extends GetxController
     if (isRoomOwner) {
       dlnaServer.start(this);
       QLog.d("start dlna server");
-      Get.snackbar("提示", "已成为房主，可以投屏了");
+      Get.snackbar("提示", "您已成为房主，可以进行投屏等操作");
     } else {
       dlnaServer.stop();
       QLog.d("stop dlna server");
@@ -39,6 +39,7 @@ abstract class MainLogic extends GetxController
   }
 
   void sync() {
+    Get.snackbar("提示", "正在申请同步，请稍后...");
     mainService.sync();
   }
 

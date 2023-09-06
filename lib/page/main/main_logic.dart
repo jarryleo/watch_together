@@ -80,6 +80,7 @@ abstract class MainLogic extends GetxController
   @override
   void setUrl(String url) {
     RoomInfo.playerInfo.url = url;
+    mainService.setUrl(url);
   }
 
   @mustCallSuper

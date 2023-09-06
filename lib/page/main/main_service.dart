@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:watch_together/constants.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/info/player_info.dart';
 import 'package:watch_together/info/room_info.dart';
@@ -93,15 +94,16 @@ class MainService extends GetxService {
           _callback?.stop();
           return;
         }
+        //如果房主和本地播放器进度相差超过3秒，则同步进度
+        int currentPosition = _callback?.getPosition() ?? 0;
+        if ((playerInfo.position - currentPosition).abs() > Constants.diffSec) {
+          _callback?.seek(playerInfo.position);
+        }
+        //播放暂停同步
         if (playerInfo.isPlaying) {
           _callback?.play();
         } else {
           _callback?.pause();
-        }
-        //如果房主和本地播放器进度相差超过3秒，则同步进度
-        int currentPosition = _callback?.getPosition() ?? 0;
-        if ((playerInfo.position - currentPosition).abs() > 3) {
-          _callback?.seek(playerInfo.position);
         }
         RoomInfo.playerInfo = playerInfo;
         break;
@@ -177,6 +179,11 @@ class MainService extends GetxService {
   void seek(int position) {
     if (!RoomInfo.isOwner) return;
     _pushAction(ActionTopic.seek, message: position.toString());
+  }
+
+  void setUrl(String url) {
+    if (!RoomInfo.isOwner) return;
+    _pushAction(ActionTopic.state, message: RoomInfo.playerInfo.toJsonString());
   }
 
   void _checkRoomOwner() {

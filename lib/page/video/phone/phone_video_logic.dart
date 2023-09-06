@@ -15,6 +15,10 @@ class PhoneVideoLogic extends MainLogic {
     super.onInit();
     player.addListener(_playerValueChanged);
     player.onCurrentPosUpdate.listen((pos) {
+      //拖拽进度,绝对值大于5秒才同步
+      if ((pos.inSeconds - RoomInfo.playerInfo.position).abs() > 5) {
+        mainService.seek(pos.inSeconds);
+      }
       RoomInfo.playerInfo.position = pos.inSeconds;
     });
   }

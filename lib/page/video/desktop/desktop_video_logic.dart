@@ -1,6 +1,7 @@
 import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter_barrage/flutter_barrage.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:watch_together/constants.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_logic.dart';
@@ -26,6 +27,7 @@ class DesktopVideoLogic extends MainLogic {
   final BarrageWallController barrageWallController = BarrageWallController();
 
   var isDanmakuInputShow = false.obs;
+  bool firstSync = false;
 
   @override
   void onInit() {
@@ -36,11 +38,20 @@ class DesktopVideoLogic extends MainLogic {
     player.positionStream.listen((position) {
       var pos = position.position;
       if (pos != null) {
+        //拖拽进度,绝对值大于5秒才同步
+        if ((pos.inSeconds - RoomInfo.playerInfo.position).abs() >
+            Constants.diffSec) {
+          mainService.seek(pos.inSeconds);
+        }
         RoomInfo.playerInfo.position = pos.inSeconds;
       }
     });
     player.playbackStream.listen((playback) {
       bool playing = playback.isPlaying;
+      if (!firstSync) {
+        firstSync = true;
+        sync();
+      }
       //播放暂停控制
       if (playing) {
         play();
@@ -63,7 +74,7 @@ class DesktopVideoLogic extends MainLogic {
       },
     );
     player.errorStream.listen((event) {
-      QLog.e('libvlc error.', tag: 'DesktopVideoLogic');
+      QLog.e('libvlc error: $event', tag: 'DesktopVideoLogic');
     });
     //devices = Devices.all;
     Equalizer equalizer = Equalizer.createMode(EqualizerMode.live);
@@ -120,6 +131,7 @@ class DesktopVideoLogic extends MainLogic {
   void setUrl(String url) {
     if (url == RoomInfo.playerInfo.url) return;
     super.setUrl(url);
+    firstSync = false;
     var media = Media.network(url);
     player.open(media);
   }

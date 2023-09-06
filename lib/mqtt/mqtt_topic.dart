@@ -16,11 +16,13 @@ enum ActionTopic {
   ///跳转 参数为进度条时间，单位秒
   sync('sync'),
 
+  ///弹幕消息
+  danmaku('danmaku'),
+
   ///申请同步, 5s 没有收到state信息则表示房主离线，自动接替房主；
   state('state');
 
   ///同步状态，参数 url,isPlaying,position
-
   final String topic;
 
   const ActionTopic(this.topic);

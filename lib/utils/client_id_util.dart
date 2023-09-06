@@ -6,15 +6,21 @@ import 'package:watch_together/mqtt/mqtt_config.dart';
 
 class ClientIdUtil {
   static const String _keyClientId = 'key_client_id';
+  static String? _clientId;
 
   /// Get client id from local storage, if not exist, generate one.
   static String getClientId() {
+    var temp = _clientId;
+    if (temp != null) {
+      return temp;
+    }
     GetStorage storage = GetStorage();
     String? clientId = storage.read(_keyClientId);
     if (clientId == null) {
       clientId = _generateClientId();
       storage.write(_keyClientId, clientId);
     }
+    _clientId = clientId;
     return clientId;
   }
 

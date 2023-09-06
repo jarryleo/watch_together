@@ -42,8 +42,8 @@ dependencies:
   fijkplayer: ^0.11.0
   dart_vlc: ^0.3.0
   xml: ^6.1.0
-  # dlna 投屏库
-  # dlna_dart: ^0.0.8
+  # 弹幕库
+  flutter_barrage: ^0.5.5
   # 网络请求库
   dio: ^4.0.6
   # 日期格式化库

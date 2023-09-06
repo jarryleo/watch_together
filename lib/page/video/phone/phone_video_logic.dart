@@ -1,10 +1,14 @@
 import 'package:fijkplayer/fijkplayer.dart';
+import 'package:flutter_barrage/flutter_barrage.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/page/main/main_logic.dart';
 
+import '../../../includes.dart';
+
 class PhoneVideoLogic extends MainLogic {
   final FijkPlayer player = FijkPlayer();
+  final BarrageWallController barrageWallController = BarrageWallController();
 
   @override
   void onInit() {
@@ -94,5 +98,22 @@ class PhoneVideoLogic extends MainLogic {
     if (value.state == FijkState.prepared) {
       sync();
     }
+  }
+
+  @override
+  void onDanmakuArrived(String danmakuText) {
+    _addDanmaku(danmakuText);
+  }
+
+  ///屏幕展示弹幕
+  void _addDanmaku(String message) {
+    barrageWallController.send([
+      Bullet(
+        child: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+    ]);
   }
 }

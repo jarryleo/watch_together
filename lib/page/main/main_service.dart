@@ -6,11 +6,13 @@ import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/mqtt/mqtt_client.dart';
 import 'package:watch_together/mqtt/mqtt_observer.dart';
 import 'package:watch_together/mqtt/mqtt_topic.dart';
+import 'package:watch_together/remote/danmaku_callback.dart';
 import 'package:watch_together/remote/room_owner_callback.dart';
 
 class MainService extends GetxService {
   PlayerAction? _callback;
   RoomOwnerCallback? _roomOwnerCallback;
+  DanmakuCallback? _danmakuCallback;
   XMqttClient mqttClient = XMqttClient();
   bool _roomHasOwner = false;
 
@@ -24,6 +26,7 @@ class MainService extends GetxService {
   void _onConnected() {
     //先以游客身份入房，如果5s没有收到房主的同步信息，自动成为房主
     _beGuest();
+    _subscribe(ActionTopic.danmaku); //订阅弹幕消息
     _pushAction(ActionTopic.join);
     //检查房间是否有房主
     _checkRoomOwner();
@@ -102,6 +105,12 @@ class MainService extends GetxService {
         }
         RoomInfo.playerInfo = playerInfo;
         break;
+      case ActionTopic.danmaku:
+        //收到弹幕消息
+        _danmakuCallback?.onDanmakuArrived(message);
+        break;
+      default:
+        break;
     }
   }
 
@@ -127,6 +136,10 @@ class MainService extends GetxService {
     _roomOwnerCallback = callback;
   }
 
+  void setDanmakuCallback(DanmakuCallback? callback) {
+    _danmakuCallback = callback;
+  }
+
   ///加入房间
   Future<bool> join(String roomId) async {
     QLog.d("join room");
@@ -136,8 +149,9 @@ class MainService extends GetxService {
 
   ///退出房间
   void exit() {
-    _roomOwnerCallback = null;
     _callback = null;
+    _roomOwnerCallback = null;
+    _danmakuCallback = null;
     mqttClient.disconnect();
     RoomInfo.reset();
     QLog.d("exit room");
@@ -200,5 +214,10 @@ class MainService extends GetxService {
     _unsubscribe(ActionTopic.join);
     _unsubscribe(ActionTopic.sync);
     _roomOwnerCallback?.onRoomOwnerChanged(RoomInfo.isOwner);
+  }
+
+  ///发送弹幕消息
+  void sendDanmaku(String message) {
+    _pushAction(ActionTopic.danmaku, message: message);
   }
 }

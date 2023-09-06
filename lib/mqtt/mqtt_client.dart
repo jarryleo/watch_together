@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -78,11 +79,12 @@ class XMqttClient {
 
   ///断开连接
   void disconnect() {
-    if (isConnected()){
+    if (isConnected()) {
       _client?.disconnect();
-    }else{
+    } else {
       QLog.d('mqtt client already disconnected');
     }
+    _observers.clear();
   }
 
   ///订阅mqtt主题
@@ -105,7 +107,7 @@ class XMqttClient {
   ///发送主题消息
   void publish(String topic, String message) {
     final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
-    builder.addString(message);
+    builder.addUTF8String(message);
     _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
     QLog.d('mqtt client publish: $topic - $message');
   }
@@ -129,8 +131,11 @@ class XMqttClient {
 
   ///接收消息监听
   void _onMessageArriving(String topic, MqttMessage message) {
-    final String msg = MqttPublishPayload.bytesToStringAsString(
-        (message as MqttPublishMessage).payload.message);
+    var buffer = (message as MqttPublishMessage).payload.message;
+    //UTF-8 解码
+    const decoder = Utf8Decoder();
+    final String msg = decoder.convert(buffer);
+    //final String msg = MqttPublishPayload.bytesToStringAsString(buffer);
     for (var observer in _observers) {
       if (topic == observer.topic) {
         observer.onMessage(topic, msg);

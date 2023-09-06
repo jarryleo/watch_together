@@ -142,6 +142,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_barrage:
+    dependency: "direct main"
+    description:
+      name: flutter_barrage
+      sha256: cc79a9bb08bcfd76e9856337c168f4b19e16916ca7bb6d929cc6f02663d3387c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.5"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -352,6 +360,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  quiver:
+    dependency: transitive
+    description:
+      name: quiver
+      sha256: b1c1ac5ce6688d77f65f3375a9abb9319b3cb32486bdc7a1e0fdf004d7ba4e47
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.1"
   screen_retriever:
     dependency: transitive
     description:

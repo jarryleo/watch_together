@@ -3,13 +3,14 @@ import 'package:watch_together/ext/string_ext.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_service.dart';
+import 'package:watch_together/remote/danmaku_callback.dart';
 import 'package:watch_together/remote/room_owner_callback.dart';
 import 'package:watch_together/route/router_helper.dart';
 
 import '../../includes.dart';
 
 abstract class MainLogic extends GetxController
-    implements PlayerAction, RoomOwnerCallback {
+    implements PlayerAction, RoomOwnerCallback, DanmakuCallback {
   final DlnaServer dlnaServer = DlnaServer(name: RouterHelper.appName);
   final MainService mainService = Get.find<MainService>();
   var isRoomOwner = false.obs;
@@ -19,6 +20,7 @@ abstract class MainLogic extends GetxController
     super.onInit();
     mainService.setPlayerInfoCallback(this);
     mainService.setRoomOwnerCallback(this);
+    mainService.setDanmakuCallback(this);
   }
 
   @override
@@ -32,6 +34,11 @@ abstract class MainLogic extends GetxController
       dlnaServer.stop();
       QLog.d("stop dlna server");
     }
+  }
+
+  @override
+  void onDanmakuArrived(String danmakuText) {
+    //子类实现
   }
 
   void exitRoom() {
@@ -80,5 +87,9 @@ abstract class MainLogic extends GetxController
   void stop() {
     RoomInfo.playerInfo.url = "";
     RoomInfo.playerInfo.isPlaying = false;
+  }
+
+  void sendDanmaku(String danmakuText) {
+    mainService.sendDanmaku(danmakuText);
   }
 }

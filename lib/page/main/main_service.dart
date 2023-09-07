@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:watch_together/constants.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
@@ -7,16 +9,15 @@ import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/mqtt/mqtt_client.dart';
 import 'package:watch_together/mqtt/mqtt_observer.dart';
 import 'package:watch_together/mqtt/mqtt_topic.dart';
-import 'package:watch_together/remote/danmaku_callback.dart';
-import 'package:watch_together/remote/room_owner_callback.dart';
 
 class MainService extends GetxService {
+  final XMqttClient mqttClient = XMqttClient();
+  final StreamController<bool> _roomOwnerController =
+      StreamController<bool>.broadcast();
+  final StreamController<String> _danmakuStreamController =
+      StreamController<String>.broadcast();
   PlayerAction? _callback;
-  RoomOwnerCallback? _roomOwnerCallback;
-  DanmakuCallback? _danmakuCallback;
-  XMqttClient mqttClient = XMqttClient();
   bool _roomHasOwner = false;
-
   Future<MainService> init() async {
     mqttClient.addOnConnectedListener(_onConnected);
     mqttClient.addOnDisconnectedListener(_onDisconnected);
@@ -112,7 +113,7 @@ class MainService extends GetxService {
         break;
       case ActionTopic.danmaku:
         //收到弹幕消息
-        _danmakuCallback?.onDanmakuArrived(message);
+        _danmakuStreamController.sink.add(message);
         break;
       default:
         break;
@@ -137,12 +138,12 @@ class MainService extends GetxService {
     _callback = callback;
   }
 
-  void setRoomOwnerCallback(RoomOwnerCallback? callback) {
-    _roomOwnerCallback = callback;
+  Stream<bool> getRoomOwnerStream() {
+    return _roomOwnerController.stream;
   }
 
-  void setDanmakuCallback(DanmakuCallback? callback) {
-    _danmakuCallback = callback;
+  Stream<String> getDanmakuStream() {
+    return _danmakuStreamController.stream;
   }
 
   ///加入房间
@@ -155,8 +156,6 @@ class MainService extends GetxService {
   ///退出房间
   void exit() {
     _callback = null;
-    _roomOwnerCallback = null;
-    _danmakuCallback = null;
     mqttClient.disconnect();
     RoomInfo.reset();
     QLog.d("exit room");
@@ -211,7 +210,7 @@ class MainService extends GetxService {
     _unsubscribe(ActionTopic.pause);
     _unsubscribe(ActionTopic.seek);
     _unsubscribe(ActionTopic.state);
-    _roomOwnerCallback?.onRoomOwnerChanged(RoomInfo.isOwner);
+    _roomOwnerController.sink.add(RoomInfo.isOwner);
   }
 
   ///成为客户端，需监听播放，暂停，跳转，同步播放进度信息，其它信息忽略
@@ -223,7 +222,7 @@ class MainService extends GetxService {
     _subscribe(ActionTopic.state);
     _unsubscribe(ActionTopic.join);
     _unsubscribe(ActionTopic.sync);
-    _roomOwnerCallback?.onRoomOwnerChanged(RoomInfo.isOwner);
+    _roomOwnerController.sink.add(RoomInfo.isOwner);
   }
 
   ///发送弹幕消息

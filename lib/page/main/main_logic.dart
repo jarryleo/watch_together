@@ -3,27 +3,25 @@ import 'package:watch_together/ext/string_ext.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_service.dart';
-import 'package:watch_together/remote/danmaku_callback.dart';
-import 'package:watch_together/remote/room_owner_callback.dart';
 import 'package:watch_together/route/router_helper.dart';
 
 import '../../includes.dart';
 
-abstract class MainLogic extends GetxController
-    implements PlayerAction, RoomOwnerCallback, DanmakuCallback {
+abstract class MainLogic extends GetxController implements PlayerAction {
   final DlnaServer dlnaServer = DlnaServer(name: RouterHelper.appName);
   final MainService mainService = Get.find<MainService>();
   var isRoomOwner = false.obs;
+  StreamSubscription<bool>? roomOwnerSub;
+  StreamSubscription<String>? danmakuSub;
 
   @override
   void onInit() {
     super.onInit();
     mainService.setPlayerInfoCallback(this);
-    mainService.setRoomOwnerCallback(this);
-    mainService.setDanmakuCallback(this);
+    roomOwnerSub = mainService.getRoomOwnerStream().listen(onRoomOwnerChanged);
+    danmakuSub = mainService.getDanmakuStream().listen(onDanmakuArrived);
   }
 
-  @override
   void onRoomOwnerChanged(bool isRoomOwner) {
     this.isRoomOwner.value = isRoomOwner;
     if (isRoomOwner) {
@@ -36,14 +34,17 @@ abstract class MainLogic extends GetxController
     }
   }
 
-  @override
-  void onDanmakuArrived(String danmakuText) {
-    //子类实现
-  }
+  ///收到房主的弹幕消息，子类实现
+  void onDanmakuArrived(String danmakuText);
 
+  ///退出房间
   void exitRoom() {
     mainService.exit();
     dlnaServer.stop();
+    roomOwnerSub?.cancel();
+    danmakuSub?.cancel();
+    roomOwnerSub = null;
+    danmakuSub = null;
   }
 
   void sync() {
@@ -90,6 +91,7 @@ abstract class MainLogic extends GetxController
     RoomInfo.playerInfo.isPlaying = false;
   }
 
+  ///发送弹幕
   void sendDanmaku(String danmakuText) {
     mainService.sendDanmaku(danmakuText);
   }

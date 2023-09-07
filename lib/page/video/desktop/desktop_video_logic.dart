@@ -32,6 +32,7 @@ class DesktopVideoLogic extends MainLogic {
   @override
   void onInit() {
     super.onInit();
+    player.setVolume(0.5);
     player.currentStream.listen((current) {
       this.current = current;
     });

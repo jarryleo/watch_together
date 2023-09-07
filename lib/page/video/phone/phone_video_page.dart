@@ -48,7 +48,20 @@ class PhoneVideoPage extends StatelessWidget {
                 )
               ],
             ),
-            SendDanmakuInput(onSend: logic.sendDanmaku)
+            SendDanmakuInput(onSend: logic.sendDanmaku),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: const Text('''
+1.由于各主流视频平台对于投屏协议的收紧，
+ 目前测试只有百度网盘手机app全屏播放时能投屏本app，
+ 开发者可以自行研究其他平台的投屏协议；
+2.如果视频播放进度误差过大，请检查各方手机系统时间是否相差过大；
+3.不支持本地视频投屏；
+4.后续考虑支持填写视频播放地址；
+                 '''),
+              ),
+            ),
           ],
         ),
         floatingActionButton: FloatingActionButton(

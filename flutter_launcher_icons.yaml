@@ -1,0 +1,20 @@
+# 图标配置 [https://pub.dev/packages/flutter_launcher_icons]
+### 生成图标:
+# `dart run flutter_launcher_icons -f flutter_launcher_icons.yaml`
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/icon/ic_app.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "assets/icon/ic_app.png"
+    background_color: "#000000"
+    theme_color: "#0000FF"
+  windows:
+    generate: true
+    image_path: "assets/icon/ic_app.png"
+    icon_size: 128 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/icon/ic_app.png"

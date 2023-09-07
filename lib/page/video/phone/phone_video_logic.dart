@@ -101,7 +101,17 @@ class PhoneVideoLogic extends MainLogic {
     }
     //视频加载完成
     if (value.state == FijkState.prepared) {
-      sync();
+      if (!RoomInfo.isOwner) {
+        seek(RoomInfo.playerInfo.getFixPosition());
+        if (RoomInfo.playerInfo.isPlaying) {
+          player.start();
+          Wakelock.enable();
+        } else {
+          player.pause();
+          Wakelock.disable();
+        }
+        sync();
+      }
     }
   }
 

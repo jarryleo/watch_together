@@ -52,15 +52,17 @@ class DesktopVideoLogic extends MainLogic {
       //第一次播放，算作初始化完成
       if (!prepared) {
         prepared = true;
-        seek(RoomInfo.playerInfo.getFixPosition());
-        if (RoomInfo.playerInfo.isPlaying) {
-          player.play();
-          Wakelock.enable();
-        } else {
-          player.pause();
-          Wakelock.disable();
+        if (!RoomInfo.isOwner) {
+          seek(RoomInfo.playerInfo.getFixPosition());
+          if (RoomInfo.playerInfo.isPlaying) {
+            player.play();
+            Wakelock.enable();
+          } else {
+            player.pause();
+            Wakelock.disable();
+          }
+          sync();
         }
-        sync();
         return;
       }
       //播放暂停控制

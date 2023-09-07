@@ -96,14 +96,17 @@ class MainService extends GetxService {
         }
         //如果房主和本地播放器进度相差超过3秒，则同步进度
         int currentPosition = _callback?.getPosition() ?? 0;
-        if ((playerInfo.position - currentPosition).abs() > Constants.diffSec) {
-          _callback?.seek(playerInfo.position);
+        if ((playerInfo.getFixPosition() - currentPosition).abs() >
+            Constants.diffSec) {
+          _callback?.seek(playerInfo.getFixPosition());
         }
         //播放暂停同步
-        if (playerInfo.isPlaying) {
-          _callback?.play();
-        } else {
-          _callback?.pause();
+        if (playerInfo.isPlaying != RoomInfo.playerInfo.isPlaying) {
+          if (playerInfo.isPlaying) {
+            _callback?.play();
+          } else {
+            _callback?.pause();
+          }
         }
         RoomInfo.playerInfo = playerInfo;
         break;

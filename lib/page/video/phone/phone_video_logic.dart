@@ -91,14 +91,15 @@ class PhoneVideoLogic extends MainLogic {
     if (playing != RoomInfo.playerInfo.isPlaying) {
       //播放暂停控制
       if (playing) {
-        play();
+        super.play();
         Wakelock.enable();
       } else {
-        pause();
+        super.pause();
         Wakelock.disable();
       }
       RoomInfo.playerInfo.isPlaying = playing;
     }
+    //视频加载完成
     if (value.state == FijkState.prepared) {
       sync();
     }

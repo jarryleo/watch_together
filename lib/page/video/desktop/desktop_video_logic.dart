@@ -27,7 +27,7 @@ class DesktopVideoLogic extends MainLogic {
   final BarrageWallController barrageWallController = BarrageWallController();
 
   var isDanmakuInputShow = false.obs;
-  bool firstSync = false;
+  bool prepared = false;
 
   @override
   void onInit() {
@@ -48,16 +48,26 @@ class DesktopVideoLogic extends MainLogic {
     });
     player.playbackStream.listen((playback) {
       bool playing = playback.isPlaying;
-      if (!firstSync) {
-        firstSync = true;
+      //第一次播放，算作初始化完成
+      if (!prepared) {
+        prepared = true;
+        seek(RoomInfo.playerInfo.getFixPosition());
+        if (RoomInfo.playerInfo.isPlaying) {
+          player.play();
+          Wakelock.enable();
+        } else {
+          player.pause();
+          Wakelock.disable();
+        }
         sync();
+        return;
       }
       //播放暂停控制
       if (playing) {
-        play();
+        super.play();
         Wakelock.enable();
       } else {
-        pause();
+        super.pause();
         Wakelock.disable();
       }
       RoomInfo.playerInfo.isPlaying = playing;
@@ -131,7 +141,7 @@ class DesktopVideoLogic extends MainLogic {
   void setUrl(String url) {
     if (url == RoomInfo.playerInfo.url) return;
     super.setUrl(url);
-    firstSync = false;
+    prepared = false;
     var media = Media.network(url);
     player.open(media);
   }

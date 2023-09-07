@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:get/get.dart';
 import 'package:watch_together/constants.dart';
@@ -18,6 +19,7 @@ class MainService extends GetxService {
       StreamController<String>.broadcast();
   PlayerAction? _callback;
   bool _roomHasOwner = false;
+
   Future<MainService> init() async {
     mqttClient.addOnConnectedListener(_onConnected);
     mqttClient.addOnDisconnectedListener(_onDisconnected);
@@ -72,8 +74,12 @@ class MainService extends GetxService {
         _callback?.pause();
         break;
       case ActionTopic.seek:
-        int position = int.tryParse(message) ?? 0;
-        _callback?.seek(position);
+        var list = jsonDecode(message);
+        int position = list[0];
+        int timeStamp = list[1];
+        RoomInfo.playerInfo.position = position;
+        RoomInfo.playerInfo.timeStamp = timeStamp;
+        _callback?.seek(RoomInfo.playerInfo.getFixPosition());
         break;
       case ActionTopic.sync:
         //是房主，接收到他人请求同步信息，同步播放信息
@@ -180,7 +186,8 @@ class MainService extends GetxService {
 
   void seek(int position) {
     if (!RoomInfo.isOwner) return;
-    _pushAction(ActionTopic.seek, message: position.toString());
+    var data = [position, DateTime.now().millisecondsSinceEpoch];
+    _pushAction(ActionTopic.seek, message: jsonEncode(data));
   }
 
   void setUrl(String url) {

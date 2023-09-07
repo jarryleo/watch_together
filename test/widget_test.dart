@@ -6,6 +6,7 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -52,6 +53,16 @@ void main() {
     var time = const Duration(seconds: 5000).toString();
     var t = time.split(".")[0];
     print(t);
+  });
+
+  test("json", () {
+    var data = [ 100, 200];
+    var jsonStr = jsonEncode(data);
+    print(jsonStr);
+    var list = jsonDecode(jsonStr);
+    int d1 = list[0];
+    int d2 = list[1];
+    print(d1);
   });
 
   test("http", () async {

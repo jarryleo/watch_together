@@ -17,14 +17,26 @@
 > 3.如果你是观众，则自动播放房主的视频，并同步房主的进度；                 
 > 4.如果你和房主视频进度不同步，点击界面上的同步按钮即可；
 
-本项目 利用dlna 投屏原理实现多端 异地一起看视频的项目；
-flutter 编写，支持多平台；
+### tips:
+>1.由于各主流视频平台对于投屏协议的收紧，
+目前测试只有百度网盘手机app全屏播放时能投屏本app，
+开发者可以自行研究其他平台的投屏协议；       
+>2.如果视频播放进度误差过大，请检查各方手机系统时间是否相差过大；       
+>3.不支持本地视频投屏；      
+>4.后续考虑支持填写视频播放地址；       
+
+本项目 由flutter 编写，支持多平台；           
+利用dlna 投屏原理实现多端 异地一起看视频的项目；            
 
 目前支持 android，windows，iphone，ipad，linux；
 
 已测试：android，iphone，Windows；
 
-项目开源，不上架应用市场，安卓用户和windows 用户可以点击下面链接体验；
+项目开源，不上架应用市场，安卓用户和windows 用户可以点击下面链接体验: 
+
+[Android下载](https://github.com/jarryleo/watch_together/releases/download/2.0.0/Android-WatchTogether2.apk)
+
+[Windows下载](https://github.com/jarryleo/watch_together/releases/download/2.0.0/Windows-WatchTogetherSetup.zip)
 
 ios用户需要自己编译；
 

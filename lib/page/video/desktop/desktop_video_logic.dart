@@ -37,9 +37,10 @@ class DesktopVideoLogic extends MainLogic {
       this.current = current;
     });
     player.positionStream.listen((position) {
+      if (!RoomInfo.isOwner) return;
       var pos = position.position;
       if (pos != null) {
-        //拖拽进度,绝对值大于5秒才同步
+        //房主才记录拖拽进度,绝对值大于3秒才同步给其他人
         if ((pos.inSeconds - RoomInfo.playerInfo.position).abs() >
             Constants.diffSec) {
           mainService.seek(pos.inSeconds);
@@ -61,7 +62,9 @@ class DesktopVideoLogic extends MainLogic {
             player.pause();
             Wakelock.disable();
           }
-          sync();
+        } else {
+          super.play();
+          Wakelock.enable();
         }
         return;
       }
@@ -97,10 +100,10 @@ class DesktopVideoLogic extends MainLogic {
   }
 
   @override
-  void dispose() {
-    super.dispose();
+  void exitRoom() {
     player.stop();
     player.dispose();
+    super.exitRoom();
   }
 
   @override
@@ -137,6 +140,7 @@ class DesktopVideoLogic extends MainLogic {
   @override
   void seek(int position) {
     super.seek(position);
+    prepared = false;
     player.seek(Duration(seconds: position));
   }
 

@@ -1,7 +1,9 @@
 import 'package:fijkplayer/fijkplayer.dart';
 import 'package:flutter_barrage/flutter_barrage.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:watch_together/constants.dart';
 import 'package:watch_together/info/room_info.dart';
+import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_logic.dart';
 
 import '../../../includes.dart';
@@ -15,8 +17,10 @@ class PhoneVideoLogic extends MainLogic {
     super.onInit();
     player.addListener(_playerValueChanged);
     player.onCurrentPosUpdate.listen((pos) {
-      //拖拽进度,绝对值大于5秒才同步
-      if ((pos.inSeconds - RoomInfo.playerInfo.position).abs() > 5) {
+      if (!RoomInfo.isOwner) return;
+      //房主拖拽进度,绝对值大于3秒才同步
+      if ((pos.inSeconds - RoomInfo.playerInfo.position).abs() >
+          Constants.diffSec) {
         mainService.seek(pos.inSeconds);
       }
       RoomInfo.playerInfo.position = pos.inSeconds;
@@ -24,11 +28,11 @@ class PhoneVideoLogic extends MainLogic {
   }
 
   @override
-  void dispose() {
-    super.dispose();
+  void onClose() {
+    super.onClose();
     player.stop();
     player.release();
-    player.dispose();
+    QLog.i("PhoneVideoLogic : onClose");
   }
 
   @override
@@ -110,7 +114,9 @@ class PhoneVideoLogic extends MainLogic {
           player.pause();
           Wakelock.disable();
         }
-        sync();
+      }else{
+        //房主播放器准备完成，同步房间其他人
+        play();
       }
     }
   }

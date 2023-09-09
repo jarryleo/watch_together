@@ -22,6 +22,12 @@ abstract class MainLogic extends GetxController implements PlayerAction {
     danmakuSub = mainService.getDanmakuStream().listen(onDanmakuArrived);
   }
 
+  @override
+  void onClose() {
+    super.onClose();
+    mainService.setPlayerInfoCallback(null);
+  }
+
   void onRoomOwnerChanged(bool isRoomOwner) {
     this.isRoomOwner.value = isRoomOwner;
     if (isRoomOwner) {

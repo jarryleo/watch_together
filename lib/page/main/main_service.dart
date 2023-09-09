@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:async/async.dart';
 import 'package:get/get.dart';
 import 'package:watch_together/constants.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
@@ -19,6 +20,7 @@ class MainService extends GetxService {
       StreamController<String>.broadcast();
   PlayerAction? _callback;
   bool _roomHasOwner = false;
+  CancelableOperation? _cancelableOperation;
 
   Future<MainService> init() async {
     mqttClient.addOnConnectedListener(_onConnected);
@@ -128,6 +130,7 @@ class MainService extends GetxService {
 
   ///发送action topic
   void _pushAction(ActionTopic topic, {String message = '0'}) {
+    if (!mqttClient.isConnected()) return;
     var data = message;
     if (message.isEmpty) {
       data = '0';
@@ -161,6 +164,8 @@ class MainService extends GetxService {
 
   ///退出房间
   void exit() {
+    _cancelableOperation?.cancel();
+    _cancelableOperation = null;
     _callback = null;
     mqttClient.disconnect();
     RoomInfo.reset();
@@ -198,13 +203,17 @@ class MainService extends GetxService {
   void _checkRoomOwner() {
     _roomHasOwner = false;
     //倒计时5秒
-    Future.delayed(const Duration(seconds: 5), () {
+    var future = Future.delayed(const Duration(seconds: 5), () {
+      if (_callback == null) return;
       if (!_roomHasOwner) {
         //空房间，自动成为房主
         _beOwner();
         _pushAction(ActionTopic.state,
             message: RoomInfo.playerInfo.toJsonString());
       }
+    });
+    _cancelableOperation = CancelableOperation.fromFuture(future, onCancel: () {
+      QLog.d("cancel check room owner");
     });
   }
 

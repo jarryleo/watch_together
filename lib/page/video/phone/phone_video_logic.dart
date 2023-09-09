@@ -5,12 +5,14 @@ import 'package:watch_together/constants.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_logic.dart';
+import 'package:watch_together/utils/task_queue_utils.dart';
 
 import '../../../includes.dart';
 
 class PhoneVideoLogic extends MainLogic {
   final FijkPlayer player = FijkPlayer();
   final BarrageWallController barrageWallController = BarrageWallController();
+  final TaskQueueUtils taskQueueUtils = TaskQueueUtils();
 
   @override
   void onInit() {
@@ -28,11 +30,17 @@ class PhoneVideoLogic extends MainLogic {
   }
 
   @override
-  void onClose() {
+  Future<void> onClose() async {
     super.onClose();
-    player.stop();
-    player.release();
+    await player.stop();
+    await player.release();
     QLog.i("PhoneVideoLogic : onClose");
+  }
+
+  void _addTask(Future future) {
+    taskQueueUtils.addTask((){
+      return future;
+    });
   }
 
   @override
@@ -58,20 +66,23 @@ class PhoneVideoLogic extends MainLogic {
     super.pause();
     //dlna or mqtt call
     if (player.isPlayable()) {
-      player.pause();
+      //player.pause();
+      _addTask(player.pause());
     }
   }
 
   @override
   void play() {
     super.play();
-    player.start();
+    //player.start();
+    _addTask(player.start());
   }
 
   @override
   void seek(int position) {
     super.seek(position);
-    player.seekTo(position * 1000);
+    //player.seekTo(position * 1000);
+    _addTask(player.seekTo(position * 1000));
   }
 
   @override
@@ -79,15 +90,19 @@ class PhoneVideoLogic extends MainLogic {
     if (url == RoomInfo.playerInfo.url) return;
     super.setUrl(url);
     RoomInfo.playerInfo.isPlaying = true;
-    player.reset();
-    player.setDataSource(url, autoPlay: true);
+    //player.reset();
+    //player.setDataSource(url, autoPlay: true);
+    _addTask(player.reset());
+    _addTask(player.setDataSource(url, autoPlay: true));
   }
 
   @override
   void stop() {
     super.stop();
-    player.stop();
-    player.reset();
+    //player.stop();
+    //player.reset();
+    _addTask(player.stop());
+    _addTask(player.reset());
   }
 
   //播放器状态监听(同步房间其他人)
@@ -108,14 +123,17 @@ class PhoneVideoLogic extends MainLogic {
     //视频加载完成
     if (value.state == FijkState.prepared) {
       if (!RoomInfo.isOwner) {
-        seek(RoomInfo.playerInfo.position);
         if (RoomInfo.playerInfo.isPlaying) {
-          player.start();
+          //player.start();
+          _addTask(player.start());
           Wakelock.enable();
         } else {
-          player.pause();
+          //player.pause();
+          _addTask(player.pause());
           Wakelock.disable();
         }
+        //同步进度
+        seek(RoomInfo.playerInfo.position);
       } else {
         //房主播放器准备完成，同步房间其他人
         play();

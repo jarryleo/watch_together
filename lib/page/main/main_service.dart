@@ -110,16 +110,16 @@ class MainService extends GetxService {
           _callback?.stop();
           return;
         }
-        //同步进度
-        int position = playerInfo.position + _delayTime ~/ 1000;
-        _callback?.seek(position);
         //播放暂停同步
         if (playerInfo.isPlaying) {
           _callback?.play();
         } else {
           _callback?.pause();
         }
-        playerInfo.position = position;
+        //同步进度
+        int fixPosition = playerInfo.position + _delayTime ~/ 1000;
+        _callback?.seek(fixPosition);
+        playerInfo.position = fixPosition;
         RoomInfo.playerInfo = playerInfo;
         break;
       case ActionTopic.danmaku:

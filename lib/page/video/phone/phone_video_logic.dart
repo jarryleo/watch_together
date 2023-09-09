@@ -78,6 +78,7 @@ class PhoneVideoLogic extends MainLogic {
   void setUrl(String url) {
     if (url == RoomInfo.playerInfo.url) return;
     super.setUrl(url);
+    player.reset();
     player.setDataSource(url, autoPlay: true);
   }
 

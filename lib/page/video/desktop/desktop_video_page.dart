@@ -20,7 +20,9 @@ class DesktopVideoPage extends StatelessWidget {
         appBar: AppBar(
           title: Obx(() {
             return Text(
-                "房间号：${RoomInfo.roomId}(${logic.isRoomOwner.value ? "房主" : "观众"})");
+                "房间号：${RoomInfo.roomId}(${logic.isRoomOwner.value
+                    ? "房主"
+                    : "观众"})");
           }),
           actions: [
             Obx(() {
@@ -34,15 +36,30 @@ class DesktopVideoPage extends StatelessWidget {
                 tooltip: '发送弹幕',
                 onPressed: () {
                   logic.isDanmakuInputShow.value =
-                      !logic.isDanmakuInputShow.value;
+                  !logic.isDanmakuInputShow.value;
                 },
               );
             }),
-            IconButton(
-              icon: const Icon(Icons.sync),
-              tooltip: 'sync',
-              onPressed: () => logic.sync(),
-            ),
+            Obx(() {
+              return Visibility(
+                visible: logic.isRoomOwner.value,
+                child: IconButton(
+                  icon: const Icon(Icons.input),
+                  tooltip: '输入视频地址',
+                  onPressed: () => logic.showInputUrlDialog(),
+                ),
+              );
+            }),
+            Obx(() {
+              return Visibility(
+                visible: !logic.isRoomOwner.value,
+                child: IconButton(
+                  icon: const Icon(Icons.sync),
+                  tooltip: '同步进度',
+                  onPressed: () => logic.sync(),
+                ),
+              );
+            }),
           ],
         ),
         body: Column(

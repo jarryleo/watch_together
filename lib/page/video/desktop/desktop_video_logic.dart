@@ -1,7 +1,9 @@
 import 'package:dart_vlc/dart_vlc.dart';
 import 'package:flutter_barrage/flutter_barrage.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/constants.dart';
+import 'package:watch_together/dialog/dialog_input_video_url.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_logic.dart';
@@ -20,6 +22,7 @@ class DesktopVideoLogic extends MainLogic {
 
   //List<Device> devices = <Device>[];
   TextEditingController controller = TextEditingController();
+  TextEditingController urlController = TextEditingController();
   TextEditingController metasController = TextEditingController();
   double bufferingProgress = 0.0;
   Media? metasMedia;
@@ -37,6 +40,7 @@ class DesktopVideoLogic extends MainLogic {
       this.current = current;
     });
     player.positionStream.listen((position) {
+      this.position = position;
       if (!RoomInfo.isOwner) return;
       var pos = position.position;
       if (pos != null) {
@@ -174,5 +178,17 @@ class DesktopVideoLogic extends MainLogic {
         ),
       ),
     ]);
+  }
+
+  void showInputUrlDialog() {
+    SmartDialog.show(
+      builder: (context) {
+        return const InputVideoUrlDialog();
+      },
+    );
+  }
+
+  void inputUrl() {
+    setUrl(urlController.text);
   }
 }

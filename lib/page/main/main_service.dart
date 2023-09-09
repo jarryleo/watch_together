@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:get/get.dart';
-import 'package:watch_together/constants.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/info/player_info.dart';
 import 'package:watch_together/info/room_info.dart';
@@ -22,6 +20,12 @@ class MainService extends GetxService {
   bool _roomHasOwner = false;
   CancelableOperation? _cancelableOperation;
 
+  //延迟时间，发起同步请求，到获取结果的延迟，用于计算播放进度
+  int _delayTime = 0;
+
+  //发起同步的时间
+  int _syncTime = 0;
+
   Future<MainService> init() async {
     mqttClient.addOnConnectedListener(_onConnected);
     mqttClient.addOnDisconnectedListener(_onDisconnected);
@@ -33,6 +37,7 @@ class MainService extends GetxService {
     //先以游客身份入房，如果5s没有收到房主的同步信息，自动成为房主
     _beGuest();
     _subscribe(ActionTopic.danmaku); //订阅弹幕消息
+    _syncTime = DateTime.now().millisecondsSinceEpoch;
     _pushAction(ActionTopic.join);
     //检查房间是否有房主
     _checkRoomOwner();
@@ -70,18 +75,18 @@ class MainService extends GetxService {
         }
         break;
       case ActionTopic.play:
+        int position = int.tryParse(message) ?? 0;
         _callback?.play();
+        _seek(position);
         break;
       case ActionTopic.pause:
+        int position = int.tryParse(message) ?? 0;
         _callback?.pause();
+        _seek(position);
         break;
       case ActionTopic.seek:
-        var list = jsonDecode(message);
-        int position = list[0];
-        int timeStamp = list[1];
-        RoomInfo.playerInfo.position = position;
-        RoomInfo.playerInfo.timeStamp = timeStamp;
-        _callback?.seek(RoomInfo.playerInfo.getFixPosition());
+        int position = int.tryParse(message) ?? 0;
+        _seek(position);
         break;
       case ActionTopic.sync:
         //是房主，接收到他人请求同步信息，同步播放信息
@@ -91,6 +96,8 @@ class MainService extends GetxService {
         }
         break;
       case ActionTopic.state:
+        //计算延迟
+        _delayTime = DateTime.now().millisecondsSinceEpoch - _syncTime;
         //收到房主同步信息，表示房间有房主
         _roomHasOwner = true;
         //接收到房主的播放信息，同步本地播放器
@@ -103,20 +110,16 @@ class MainService extends GetxService {
           _callback?.stop();
           return;
         }
-        //如果房主和本地播放器进度相差超过3秒，则同步进度
-        int currentPosition = _callback?.getPosition() ?? 0;
-        if ((playerInfo.getFixPosition() - currentPosition).abs() >
-            Constants.diffSec) {
-          _callback?.seek(playerInfo.getFixPosition());
-        }
+        //同步进度
+        int position = playerInfo.position + _delayTime ~/ 1000;
+        _callback?.seek(position);
         //播放暂停同步
-        if (playerInfo.isPlaying != RoomInfo.playerInfo.isPlaying) {
-          if (playerInfo.isPlaying) {
-            _callback?.play();
-          } else {
-            _callback?.pause();
-          }
+        if (playerInfo.isPlaying) {
+          _callback?.play();
+        } else {
+          _callback?.pause();
         }
+        playerInfo.position = position;
         RoomInfo.playerInfo = playerInfo;
         break;
       case ActionTopic.danmaku:
@@ -126,6 +129,13 @@ class MainService extends GetxService {
       default:
         break;
     }
+  }
+
+  ///sync remote seek
+  void _seek(int position) {
+    var fixPosition = position + _delayTime ~/ 1000;
+    RoomInfo.playerInfo.position = fixPosition;
+    _callback?.seek(fixPosition);
   }
 
   ///发送action topic
@@ -175,24 +185,26 @@ class MainService extends GetxService {
   ///请求房主同步播放信息，5秒没收到回复则自动成为房主
   void sync() {
     if (RoomInfo.isOwner) return;
+    _syncTime = DateTime.now().millisecondsSinceEpoch;
     _pushAction(ActionTopic.sync);
     _checkRoomOwner();
   }
 
   void play() {
     if (!RoomInfo.isOwner) return;
-    _pushAction(ActionTopic.play);
+    _pushAction(ActionTopic.play,
+        message: RoomInfo.playerInfo.position.toString());
   }
 
   void pause() {
     if (!RoomInfo.isOwner) return;
-    _pushAction(ActionTopic.pause);
+    _pushAction(ActionTopic.pause,
+        message: RoomInfo.playerInfo.position.toString());
   }
 
   void seek(int position) {
     if (!RoomInfo.isOwner) return;
-    var data = [position, DateTime.now().millisecondsSinceEpoch];
-    _pushAction(ActionTopic.seek, message: jsonEncode(data));
+    _pushAction(ActionTopic.seek, message: position.toString());
   }
 
   void setUrl(String url) {

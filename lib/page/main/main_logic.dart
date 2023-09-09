@@ -1,3 +1,5 @@
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:watch_together/dialog/dialog_input_video_url.dart';
 import 'package:watch_together/dlna/dlna_flutter.dart';
 import 'package:watch_together/ext/string_ext.dart';
 import 'package:watch_together/info/room_info.dart';
@@ -10,6 +12,7 @@ import '../../includes.dart';
 abstract class MainLogic extends GetxController implements PlayerAction {
   final DlnaServer dlnaServer = DlnaServer(name: RouterHelper.appName);
   final MainService mainService = Get.find<MainService>();
+  final TextEditingController urlController = TextEditingController();
   var isRoomOwner = false.obs;
   StreamSubscription<bool>? roomOwnerSub;
   StreamSubscription<String>? danmakuSub;
@@ -100,5 +103,17 @@ abstract class MainLogic extends GetxController implements PlayerAction {
   ///发送弹幕
   void sendDanmaku(String danmakuText) {
     mainService.sendDanmaku(danmakuText);
+  }
+
+  void showInputUrlDialog() {
+    SmartDialog.show(
+      builder: (context) {
+        return const InputVideoUrlDialog();
+      },
+    );
+  }
+
+  void inputUrl() {
+    setUrl(urlController.text);
   }
 }

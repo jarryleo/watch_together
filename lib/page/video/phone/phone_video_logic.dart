@@ -78,6 +78,7 @@ class PhoneVideoLogic extends MainLogic {
   void setUrl(String url) {
     if (url == RoomInfo.playerInfo.url) return;
     super.setUrl(url);
+    RoomInfo.playerInfo.isPlaying = true;
     player.reset();
     player.setDataSource(url, autoPlay: true);
   }
@@ -107,7 +108,7 @@ class PhoneVideoLogic extends MainLogic {
     //视频加载完成
     if (value.state == FijkState.prepared) {
       if (!RoomInfo.isOwner) {
-        seek(RoomInfo.playerInfo.getFixPosition());
+        seek(RoomInfo.playerInfo.position);
         if (RoomInfo.playerInfo.isPlaying) {
           player.start();
           Wakelock.enable();
@@ -115,7 +116,7 @@ class PhoneVideoLogic extends MainLogic {
           player.pause();
           Wakelock.disable();
         }
-      }else{
+      } else {
         //房主播放器准备完成，同步房间其他人
         play();
       }

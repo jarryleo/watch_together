@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:watch_together/page/video/desktop/desktop_video_logic.dart';
+import 'package:watch_together/page/video/phone/phone_video_logic.dart';
 
 import '../includes.dart';
 
@@ -8,9 +11,12 @@ class InputVideoUrlDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var logic = (Platform.isAndroid || Platform.isIOS)
+        ? Get.find<PhoneVideoLogic>()
+        : Get.find<DesktopVideoLogic>();
     return Container(
-      width: 300,
-      height: 200,
+      width: 320,
+      height: 240,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -25,7 +31,7 @@ class InputVideoUrlDialog extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: Get.find<DesktopVideoLogic>().urlController,
+            controller: logic.urlController,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               hintText: '请输入视频地址',
@@ -43,7 +49,7 @@ class InputVideoUrlDialog extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  Get.find<DesktopVideoLogic>().inputUrl();
+                  logic.inputUrl();
                   SmartDialog.dismiss();
                 },
                 child: const Text('确定'),

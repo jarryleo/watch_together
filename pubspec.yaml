@@ -37,11 +37,14 @@ dependencies:
   #  logger
   logger: ^2.0.1
   #  provider: ^6.0.2
-  # 视频播放
-  video_player: ^2.7.0
-  fijkplayer: ^0.11.0
-  dart_vlc: ^0.3.0
+  # 视频播放器
+  appinio_video_player: ^1.2.2 # web端
+  #  cached_video_player: ^2.0.4
+  #  video_player: ^2.7.2
+  fijkplayer: ^0.11.0  # 移动端
+  dart_vlc: ^0.3.0  # 桌面端
   xml: ^6.1.0
+
   # 弹幕库
   flutter_barrage: ^0.5.5
   # 网络请求库

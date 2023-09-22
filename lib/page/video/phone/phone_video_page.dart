@@ -21,7 +21,9 @@ class PhoneVideoPage extends StatelessWidget {
         appBar: AppBar(
           title: Obx(() {
             return Text(
-                "房间号：${RoomInfo.roomId}(${logic.isRoomOwner.value ? "房主" : "观众"})");
+                "房间号：${RoomInfo.roomId}(${logic.isRoomOwner.value
+                    ? "房主"
+                    : "观众"})");
           }),
         ),
         body: Column(

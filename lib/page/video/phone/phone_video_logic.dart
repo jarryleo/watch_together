@@ -4,12 +4,13 @@ import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/constants.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
+import 'package:watch_together/page/main/main_ext.dart';
 import 'package:watch_together/page/main/main_logic.dart';
 import 'package:watch_together/utils/task_queue_utils.dart';
 
 import '../../../includes.dart';
 
-class PhoneVideoLogic extends MainLogic {
+class PhoneVideoLogic extends MainLogic with DlnaOnMainLogic {
   final FijkPlayer player = FijkPlayer();
   final BarrageWallController barrageWallController = BarrageWallController();
   final TaskQueueUtils taskQueueUtils = TaskQueueUtils();
@@ -38,7 +39,7 @@ class PhoneVideoLogic extends MainLogic {
   }
 
   void _addTask(Future future) {
-    taskQueueUtils.addTask((){
+    taskQueueUtils.addTask(() {
       return future;
     });
   }

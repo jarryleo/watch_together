@@ -5,12 +5,10 @@ import 'package:watch_together/ext/string_ext.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/page/main/main_service.dart';
-import 'package:watch_together/route/router_helper.dart';
 
 import '../../includes.dart';
 
 abstract class MainLogic extends GetxController implements PlayerAction {
-  final DlnaServer dlnaServer = DlnaServer(name: RouterHelper.appName);
   final MainService mainService = Get.find<MainService>();
   final TextEditingController urlController = TextEditingController();
   var isRoomOwner = false.obs;
@@ -34,11 +32,9 @@ abstract class MainLogic extends GetxController implements PlayerAction {
   void onRoomOwnerChanged(bool isRoomOwner) {
     this.isRoomOwner.value = isRoomOwner;
     if (isRoomOwner) {
-      dlnaServer.start(this);
       QLog.d("start dlna server");
-      "您已成为房主，可以进行投屏等操作".showSnackBar();
+      "您已成为房主，可以进行投屏/设置播放地址等操作".showSnackBar();
     } else {
-      dlnaServer.stop();
       QLog.d("stop dlna server");
     }
   }
@@ -49,7 +45,6 @@ abstract class MainLogic extends GetxController implements PlayerAction {
   ///退出房间
   void exitRoom() {
     mainService.exit();
-    dlnaServer.stop();
     roomOwnerSub?.cancel();
     danmakuSub?.cancel();
     roomOwnerSub = null;
@@ -108,7 +103,11 @@ abstract class MainLogic extends GetxController implements PlayerAction {
   void showInputUrlDialog() {
     SmartDialog.show(
       builder: (context) {
-        return const InputVideoUrlDialog();
+        return InputVideoUrlDialog(
+          onInputUrlCallback: (value) {
+            setUrl(value);
+          },
+        );
       },
     );
   }

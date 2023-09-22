@@ -4,11 +4,12 @@ import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/constants.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/logger/log_utils.dart';
+import 'package:watch_together/page/main/main_ext.dart';
 import 'package:watch_together/page/main/main_logic.dart';
 
 import '../../../includes.dart';
 
-class DesktopVideoLogic extends MainLogic {
+class DesktopVideoLogic extends MainLogic with DlnaOnMainLogic {
   Player player = Player(id: 511);
   MediaType mediaType = MediaType.file;
   CurrentState current = CurrentState();

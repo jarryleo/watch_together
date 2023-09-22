@@ -1,19 +1,17 @@
-import 'dart:io';
-
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:watch_together/page/video/desktop/desktop_video_logic.dart';
-import 'package:watch_together/page/video/phone/phone_video_logic.dart';
 
 import '../includes.dart';
 
+typedef UrlCallBack = void Function(String value);
+
 class InputVideoUrlDialog extends StatelessWidget {
-  const InputVideoUrlDialog({super.key});
+  InputVideoUrlDialog({super.key, required this.onInputUrlCallback});
+
+  final UrlCallBack onInputUrlCallback;
+  final TextEditingController _controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    var logic = (Platform.isAndroid || Platform.isIOS)
-        ? Get.find<PhoneVideoLogic>()
-        : Get.find<DesktopVideoLogic>();
     return Container(
       width: 320,
       height: 240,
@@ -31,7 +29,7 @@ class InputVideoUrlDialog extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: logic.urlController,
+            controller: _controller,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               hintText: '请输入视频地址',
@@ -49,7 +47,7 @@ class InputVideoUrlDialog extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  logic.inputUrl();
+                  onInputUrlCallback(_controller.text);
                   SmartDialog.dismiss();
                 },
                 child: const Text('确定'),

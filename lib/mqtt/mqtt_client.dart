@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:watch_together/logger/log_utils.dart';
@@ -19,21 +21,26 @@ class XMqttClient {
 
   XMqttClient._internal();
 
-  MqttServerClient? _client;
+  MqttClient? _client;
 
   final List<XMqttObserver> _observers = [];
   final List<OnConnected> _onConnectedListener = [];
   final List<OnDisconnected> _onDisconnectedListener = [];
 
   Future<bool> connect() async {
+    MqttClient client;
     //client
-    MqttServerClient client = MqttServerClient.withPort(
-        MqttConfig.host, ClientIdUtil.getClientId(), MqttConfig.port);
-    _client = client;
+    if (kIsWeb) {
+      client = MqttBrowserClient.withPort(
+          MqttConfig.hostWeb, ClientIdUtil.getClientId(), MqttConfig.portWeb);
+    } else {
+      client = MqttServerClient.withPort(
+          MqttConfig.host, ClientIdUtil.getClientId(), MqttConfig.port);
+    }
 
+    _client = client;
     //config
     client.logging(on: true);
-    client.secure = true;
     client.keepAlivePeriod = 60;
     client.connectTimeoutPeriod = 60;
     client.autoReconnect = false;
@@ -47,11 +54,16 @@ class XMqttClient {
     //connect
     try {
       //SSL
-      var defaultContext = SecurityContext.defaultContext;
-      //defaultContext.setTrustedCertificates(MqttConfig.crtFile);
-      var certBytes = await rootBundle.load(MqttConfig.crtFile);
-      defaultContext.setTrustedCertificatesBytes(certBytes.buffer.asInt8List());
-      client.securityContext = defaultContext;
+      if (client is MqttServerClient) {
+        var defaultContext = SecurityContext.defaultContext;
+        var certBytes = await rootBundle.load(MqttConfig.crtFile);
+        defaultContext
+            .setTrustedCertificatesBytes(certBytes.buffer.asInt8List());
+        client.securityContext = defaultContext;
+        client.secure = true;
+      }else if (client is MqttBrowserClient) {
+        client.websocketProtocols = ['mqtt'];
+      }
       client.setProtocolV311();
       //开始连接
       var mqttClientConnectionStatus =

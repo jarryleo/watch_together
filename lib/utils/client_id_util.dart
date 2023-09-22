@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:uuid/uuid.dart';
 import 'package:watch_together/mqtt/mqtt_config.dart';
@@ -25,7 +26,7 @@ class ClientIdUtil {
   }
 
   static String _getPlatformName() {
-    return Platform.operatingSystem;
+    return kIsWeb ? "web" : Platform.operatingSystem;
   }
 
   static String _getUuid() {

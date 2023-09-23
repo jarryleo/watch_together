@@ -27,9 +27,9 @@
 本项目 由flutter 编写，支持多平台；           
 利用dlna 投屏原理实现多端 异地一起看视频的项目；            
 
-目前支持 android，windows，iphone，ipad，linux；
+目前支持 android, windows, iphone, ipad, linux, web;
 
-已测试：android，iphone，Windows；
+已测试：android, iphone, Windows, web；
 
 项目开源，不上架应用市场，安卓用户和windows 用户可以点击下面链接体验: 
 

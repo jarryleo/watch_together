@@ -1,43 +1,22 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:watch_together/logger/log_utils.dart';
-import 'package:watch_together/utils/client_id_util.dart';
 
 import 'mqtt_config.dart';
 import 'mqtt_observer.dart';
 
-class XMqttClient {
-  static final XMqttClient _singleton = XMqttClient._internal();
-
-  factory XMqttClient() {
-    return _singleton;
-  }
-
-  XMqttClient._internal();
-
+abstract class XMqttClient {
   MqttClient? _client;
 
   final List<XMqttObserver> _observers = [];
   final List<OnConnected> _onConnectedListener = [];
   final List<OnDisconnected> _onDisconnectedListener = [];
 
-  Future<bool> connect() async {
-    MqttClient client;
-    //client
-    if (kIsWeb) {
-      client = MqttBrowserClient.withPort(
-          MqttConfig.hostWeb, ClientIdUtil.getClientId(), MqttConfig.portWeb);
-    } else {
-      client = MqttServerClient.withPort(
-          MqttConfig.host, ClientIdUtil.getClientId(), MqttConfig.port);
-    }
+  Future<MqttClient> buildClient();
 
+  Future<bool> connect() async {
+    MqttClient client = await buildClient();
     _client = client;
     //config
     client.logging(on: true);
@@ -53,17 +32,6 @@ class XMqttClient {
 
     //connect
     try {
-      //SSL
-      if (client is MqttServerClient) {
-        var defaultContext = SecurityContext.defaultContext;
-        var certBytes = await rootBundle.load(MqttConfig.crtFile);
-        defaultContext
-            .setTrustedCertificatesBytes(certBytes.buffer.asInt8List());
-        client.securityContext = defaultContext;
-        client.secure = true;
-      }else if (client is MqttBrowserClient) {
-        client.websocketProtocols = ['mqtt'];
-      }
       client.setProtocolV311();
       //开始连接
       var mqttClientConnectionStatus =

@@ -9,9 +9,10 @@ import 'package:watch_together/logger/log_utils.dart';
 import 'package:watch_together/mqtt/mqtt_client.dart';
 import 'package:watch_together/mqtt/mqtt_observer.dart';
 import 'package:watch_together/mqtt/mqtt_topic.dart';
+import 'package:watch_together/utils/platform_utils.dart';
 
 class MainService extends GetxService {
-  final XMqttClient mqttClient = XMqttClient();
+  late XMqttClient mqttClient;
   final StreamController<bool> _roomOwnerController =
       StreamController<bool>.broadcast();
   final StreamController<String> _danmakuStreamController =
@@ -27,6 +28,7 @@ class MainService extends GetxService {
   int _syncTime = 0;
 
   Future<MainService> init() async {
+    mqttClient = PlatFormUtils.mqttClient!;
     mqttClient.addOnConnectedListener(_onConnected);
     mqttClient.addOnDisconnectedListener(_onDisconnected);
     return this;

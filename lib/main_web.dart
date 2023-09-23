@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:watch_together/config.dart';
 import 'package:watch_together/route/router_web.dart';
 
+import 'config_web.dart';
+
 void main() async {
-  await Config.init();
+  await ConfigWeb.init();
   runApp(RouterWeb.init());
 }

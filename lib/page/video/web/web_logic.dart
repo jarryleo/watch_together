@@ -3,6 +3,8 @@ import 'package:flutter_barrage/flutter_barrage.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/page/main/main_logic.dart';
+import 'package:watch_together/route/route_ext.dart';
+import 'package:watch_together/route/routes.dart';
 
 import '../../../includes.dart';
 
@@ -22,6 +24,15 @@ class WebLogic extends MainLogic {
       context: Get.context!,
       videoPlayerController: videoPlayerController!,
     );
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    //浏览器刷新跳转房间号输入页面
+    if (RoomInfo.roomId.length < 6) {
+      Routes.root.pageOffAll();
+    }
   }
 
   void _switchVideoSource(String source) async {

@@ -1,10 +1,9 @@
 import 'package:appinio_video_player/appinio_video_player.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_barrage/flutter_barrage.dart';
-import 'package:get/get.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/widget/widget_send_danmaku.dart';
 
+import '../../../includes.dart';
 import 'web_logic.dart';
 
 class WebPage extends StatelessWidget {
@@ -23,9 +22,7 @@ class WebPage extends StatelessWidget {
         appBar: AppBar(
           title: Obx(() {
             return Text(
-                "房间号：${RoomInfo.roomId}(${logic.isRoomOwner.value
-                    ? "房主"
-                    : "观众"})");
+                "房间号：${RoomInfo.roomId}(${logic.isRoomOwner.value ? "房主" : "观众"})");
           }),
           actions: [
             Obx(() {
@@ -39,7 +36,7 @@ class WebPage extends StatelessWidget {
                 tooltip: '发送弹幕',
                 onPressed: () {
                   logic.isDanmakuInputShow.value =
-                  !logic.isDanmakuInputShow.value;
+                      !logic.isDanmakuInputShow.value;
                 },
               );
             }),
@@ -67,13 +64,13 @@ class WebPage extends StatelessWidget {
         ),
         body: Column(
           children: [
-            Flexible(
+            Expanded(
               child: Stack(
                 children: [
                   SafeArea(
                     child: CustomVideoPlayer(
-                        customVideoPlayerController: logic.customVideoPlayerController!
-                    ),
+                        customVideoPlayerController:
+                            logic.customVideoPlayerController!),
                   ),
                   Positioned(
                     left: 0,

@@ -1,5 +1,4 @@
 import 'package:dart_vlc/dart_vlc.dart';
-import 'package:watch_together/utils/platform_utils.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'includes.dart';
@@ -8,13 +7,9 @@ class ConfigWindow {
   ///初始化
   static Future<void> init() async {
     //初始化vlc
-    if (PlatFormUtils.isDesktop()) {
-      DartVLC.initialize(useFlutterNativeView: true);
-    }
+    await DartVLC.initialize(useFlutterNativeView: true);
     //初始化窗口
-    if (PlatFormUtils.isDesktop()) {
-      await initWindow();
-    }
+    await initWindow();
   }
 
   ///初始化窗口设置

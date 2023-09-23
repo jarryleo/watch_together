@@ -10,7 +10,6 @@ import '../../includes.dart';
 
 abstract class MainLogic extends GetxController implements PlayerAction {
   final MainService mainService = Get.find<MainService>();
-  final TextEditingController urlController = TextEditingController();
   var isRoomOwner = false.obs;
   StreamSubscription<bool>? roomOwnerSub;
   StreamSubscription<String>? danmakuSub;
@@ -110,9 +109,5 @@ abstract class MainLogic extends GetxController implements PlayerAction {
         );
       },
     );
-  }
-
-  void inputUrl() {
-    setUrl(urlController.text);
   }
 }

@@ -12,7 +12,6 @@ class WebPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logic = Get.put(WebLogic());
-
     return WillPopScope(
       onWillPop: () {
         logic.exitRoom();
@@ -68,9 +67,11 @@ class WebPage extends StatelessWidget {
               child: Stack(
                 children: [
                   SafeArea(
-                    child: CustomVideoPlayer(
-                        customVideoPlayerController:
-                            logic.customVideoPlayerController!),
+                    child: GetBuilder<WebLogic>(builder: (logic) {
+                      return CustomVideoPlayer(
+                          customVideoPlayerController:
+                              logic.customVideoPlayerController!);
+                    }),
                   ),
                   Positioned(
                     left: 0,

@@ -1,6 +1,7 @@
 import 'package:appinio_video_player/appinio_video_player.dart';
 import 'package:flutter_barrage/flutter_barrage.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:watch_together/constants.dart';
 import 'package:watch_together/info/room_info.dart';
 import 'package:watch_together/page/main/main_logic.dart';
 import 'package:watch_together/route/route_ext.dart';
@@ -20,6 +21,7 @@ class WebLogic extends MainLogic {
   void onInit() {
     super.onInit();
     videoPlayerController = VideoPlayerController.network("");
+    videoPlayerController?.addListener(_videoListener);
     customVideoPlayerController = CustomVideoPlayerController(
       context: Get.context!,
       videoPlayerController: videoPlayerController!,
@@ -40,6 +42,7 @@ class WebLogic extends MainLogic {
     videoPlayerController?.removeListener(_videoListener);
     await videoPlayerController?.dispose();
     videoPlayerController = VideoPlayerController.network(source);
+    videoPlayerController?.addListener(_videoListener);
     customVideoPlayerController = CustomVideoPlayerController(
       context: Get.context!,
       videoPlayerController: videoPlayerController!,
@@ -52,6 +55,14 @@ class WebLogic extends MainLogic {
   }
 
   void _videoListener() {
+    if (RoomInfo.isOwner) {
+      var pos = getPosition();
+      //房主才记录拖拽进度,绝对值大于3秒才同步给其他人
+      if ((pos - RoomInfo.playerInfo.position).abs() > Constants.diffSec) {
+        mainService.seek(pos);
+      }
+      RoomInfo.playerInfo.position = pos;
+    }
     bool playing = videoPlayerController?.value.isPlaying ?? false;
     if (playing != RoomInfo.playerInfo.isPlaying) {
       //播放暂停控制
@@ -63,23 +74,6 @@ class WebLogic extends MainLogic {
         Wakelock.disable();
       }
       RoomInfo.playerInfo.isPlaying = playing;
-    }
-    //视频加载完成
-    if (videoPlayerController?.value.isInitialized ?? false) {
-      if (!RoomInfo.isOwner) {
-        if (RoomInfo.playerInfo.isPlaying) {
-          videoPlayerController?.play();
-          Wakelock.enable();
-        } else {
-          videoPlayerController?.pause();
-          Wakelock.disable();
-        }
-        //同步进度
-        seek(RoomInfo.playerInfo.position);
-      } else {
-        //房主播放器准备完成，同步房间其他人
-        play();
-      }
     }
   }
 

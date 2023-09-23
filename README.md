@@ -37,7 +37,11 @@
 
 [Windows下载](https://github.com/jarryleo/watch_together/releases/download/2.0.1/Windows_WatchTogtherSetup_2.0.1.zip)
 
-ios用户需要自己编译；
+[Web体验地址](https://jarryleo.github.io/)   
+
+WEB不支持投屏，支持输入视频地址播放；           
+
+ios用户需要自己编译；      
 
 ### 关于MQTT:
 
